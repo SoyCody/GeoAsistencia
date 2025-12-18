@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import { verificarConexionBD } from './config/db.js';
+import authRoutes from './routes/auth.js';
 
 dotenv.config();
 const app = express();
@@ -17,6 +18,8 @@ const PORT = 3000;
 // Parseo de cuerpos
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use('/auth', authRoutes);
 
 app.listen(PORT, async ()=>{
     console.log('Servidor corriendo en puerto', PORT),
