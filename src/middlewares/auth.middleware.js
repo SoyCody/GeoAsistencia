@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { pool } from '../../config/db.js';
+import { pool } from "../config/db.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -20,42 +20,45 @@ export const auth = async (req, res, next) => {
   }
 
   try {
-    // 2. Verificar token (exp, firma, algoritmo)
+    // 2. Verificar token
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    // 3. Consultar usuario + perfil
+    // 3. Buscar perfil (IDENTIDAD REAL)
     const result = await pool.query(
       `
-      SELECT 
-        u.id,
-        p.es_admin
-      FROM users u
-      JOIN perfil p ON p.user_id = u.id
-      WHERE u.id = $1
-      LIMIT 1
+        SELECT 
+          id,
+          es_admin,
+          estado
+        FROM perfil
+        WHERE id = $1
+          AND estado = 'ACTIVO'
+        LIMIT 1
       `,
       [decoded.sub]
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({
-        error: "Usuario no existe"
+        error: "Usuario no válido o inactivo"
       });
     }
 
-    // 4. Adjuntar usuario al request
+    // 4. Adjuntar info mínima al request
     req.user = {
       id: result.rows[0].id,
       esAdmin: result.rows[0].es_admin
     };
 
     next();
-  } catch (err) {
+
+  } catch (error) {
     return res.status(401).json({
       error: "Token inválido o expirado"
     });
   }
 };
+
 
 
 export const isAdmin = (req, res, next) => {

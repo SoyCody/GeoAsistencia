@@ -47,7 +47,7 @@ CREATE TABLE perfil (
     cargo VARCHAR(50),
     password_hash VARCHAR(255) NOT NULL, 
     es_admin BOOLEAN DEFAULT FALSE,
-    estado BOOLEAN DEFAULT TRUE,
+    estado VARCHAR (20) DEFAULT 'ACTIVO',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() 
 );
