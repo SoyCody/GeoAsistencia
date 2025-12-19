@@ -49,7 +49,7 @@ CREATE TABLE perfil (
     es_admin BOOLEAN DEFAULT FALSE,
     estado BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() -- Columna añadida
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() 
 );
 
 -- =============================================
