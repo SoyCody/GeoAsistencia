@@ -59,8 +59,6 @@ export const auth = async (req, res, next) => {
   }
 };
 
-
-
 export const isAdmin = (req, res, next) => {
   if (!req.user?.esAdmin) {
     return res.status(403).json({
