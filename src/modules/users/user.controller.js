@@ -1,9 +1,12 @@
 import { pool } from '../../config/db.js';
-import { me, listUsers, verAdmin, changeState } from './user.repository.js';
+import { me, listUsers, verAdmin, changeState, changeRole, consultStateCode} from './user.repository.js';
 import { isUserAdmin } from './user.validator.js';
+import { auditarCambio } from '../auditoria/auditoria.service.js';
+import { AUDIT_ACTIONS, AUDIT_TABLES } from '../auditoria/auditoria.constants.js';
 
 export const getMe = async (req, res) => {
-  const perfilId = req.user?.id; // ← JWT apunta a perfil.id
+  const perfilId = req.user?.id;
+  const client = await pool.connect();
 
   try {
 
@@ -25,8 +28,46 @@ export const getMe = async (req, res) => {
     return res.status(500).json({
       status: "error"
     });
+  } finally{
+    client.release();
   }
 };
+
+export const watch = async(req, res)=>{
+  const client = await pool.connect();
+  try{
+    const { id } = req.params;
+    if(!id){
+      return res.status(400).json({
+        message:'Debe haber el id del usaurio'
+      })
+    }
+
+    const result = await watchUser(client, id);
+
+    if(result.rows.length === 0){
+
+      return res.status(404).json({
+        status:'error',
+        message:'No se ha encontrado ningun usuario'
+      })
+    }
+
+    return res.status(200).json({
+      status:'success',
+      data: result.rows[0]
+    })
+
+  } catch(error){
+    console.log(error);
+    return res.status(400).json({
+      status:'error'
+    })
+  } finally{
+    client.release();
+  }
+}
+
 
 const listUsersByState = (estado) => async (req, res) => {
   const client = await pool.connect();
@@ -67,6 +108,8 @@ export const assignAdmin = async (req, res) => {
     const { id } = req.params;
 
     const usuario = await verAdmin(client, id)
+    const antes = usuario.rows[0].es_admin;
+    let bool = true;
 
     // Verificar si existe el usuario
     if (usuario.rows.length === 0) {
@@ -90,13 +133,21 @@ export const assignAdmin = async (req, res) => {
       });
     };
 
-    // Asignar privilegios de admin
-    await client.query(
-      `UPDATE perfil 
-       SET es_admin = true, updated_at = NOW() 
-       WHERE id = $1`,
-      [id]
-    );
+    const result = await changeRole(client, bool, id);
+    const despues = result.rows[0].es_admin;
+
+    await auditarCambio(client, {
+      adminPerfilId: req.user.id,
+      tabla: AUDIT_TABLES.PERFIL,
+      accion: AUDIT_ACTIONS.ROLE_CHANGE,
+      detalle:{
+        codigoEmpleado: usuario.rows[0].codigo_empleado,
+        cambio:{
+          antes:{ es_admin: antes},
+          despues:{ es_admin: despues}
+        }
+      }
+    });
 
     await client.query('COMMIT');
 
@@ -104,7 +155,7 @@ export const assignAdmin = async (req, res) => {
       message: 'Privilegios de administrador asignados exitosamente',
       usuario: {
         codigo_empleado: usuario.rows[0].codigo_empleado,
-        es_admin: true
+        es_admin: bool
       }
     });
 
@@ -124,9 +175,13 @@ export const revokeAdmin = async (req, res) => {
   try {
 
     const { id } = req.params;
+    const bool = false;
     await client.query('BEGIN');
 
     const usuario = await verAdmin(client, id);
+    const antes = usuario.rows[0].es_admin;
+
+    // Verificar si existe el usuario
     if (usuario.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -147,12 +202,21 @@ export const revokeAdmin = async (req, res) => {
       });
     };
 
-    await client.query(
-      `UPDATE perfil 
-       SET es_admin = false, updated_at = NOW() 
-       WHERE id = $1`,
-      [id]
-    );
+    const result = await changeRole(client, bool, id);
+    const despues = result.row[0].is_admin;
+
+    await auditarCambio(client, {
+      adminPerfilId: req.user.id,
+      tabla: AUDIT_TABLES.PERFIL,
+      accion: AUDIT_ACTIONS.ROLE_CHANGE,
+      detalle:{
+        codigoEmpleado: usuario.rows[0].codigo_empleado,
+        cambio: {
+          antes:{ es_admin: antes},
+          despues:{ es_admin: despues}
+        }
+      }
+    })
 
     await client.query('COMMIT');
 
@@ -161,7 +225,7 @@ export const revokeAdmin = async (req, res) => {
       usuario: {
         id: id,
         codigo_empleado: usuario.rows[0].codigo_empleado,
-        es_admin: false
+        es_admin: bool
       }
     });
 
@@ -180,44 +244,85 @@ const alterState = (estado) => async (req, res) => {
   const client = await pool.connect();
 
   try {
-
     const { id } = req.params;
     await client.query('BEGIN');
 
-    const admin = await isUserAdmin(client, id);
+    // Obtener información del usuario antes de cualquier cambio
+    const usuarioInfo = await consultStateCode(client, id);
 
-    if (admin) {
+    // Verificar si el usuario existe
+    if (usuarioInfo.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        error: 'Usuario no encontrado'
+      });
+    }
+
+    const { codigo_empleado, estado: estadoActual, es_admin } = usuarioInfo.rows[0];
+
+    // Verificar que no sea administrador
+    if (es_admin) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({
+        error: 'No puede alterar el estado de un administrador'
+      });
+    }
+
+    // Verificar que el estado sea diferente
+    if (estadoActual === estado) {
       await client.query('ROLLBACK');
       return res.status(400).json({
-        message: "No puede alterar el estado de un administrador"
-      })
-    };
+        error: `El usuario ya está en estado ${estado}`
+      });
+    }
 
-    const usuario = await changeState(client, estado, id);
-    if (usuario.rowCount === 0) {
-      client.query("ROLLBACK");
-      return res.status(404).json({
-        message: "No se ha encontrado ningún usuario"
-      })
-    };
-    
+    // Cambiar el estado
+    const resultado = await changeState(client, estado, id);
+
+    // Verificar que se actualizó correctamente
+    if (resultado.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(500).json({
+        error: 'No se pudo actualizar el estado del usuario'
+      });
+    }
+
+    const estadoNuevo = resultado.rows[0].estado;
+
+    // 7. Auditar el cambio
+    await auditarCambio(client, {
+      adminPerfilId: req.user.id,
+      tabla: AUDIT_TABLES.PERFIL,
+      accion: AUDIT_ACTIONS.STATUS_CHANGE,
+      detalle: {
+        codigoEmpleado: codigo_empleado,
+        cambio: {
+          antes: { estado: estadoActual },
+          despues: { estado: estadoNuevo }
+        }
+      }
+    });
+
     await client.query('COMMIT');
 
     return res.status(200).json({
-      message: "Estado asignado correctamente"
-    })
+      message: 'Estado actualizado correctamente',
+      usuario: {
+        codigo_empleado,
+        estado: estadoNuevo
+      }
+    });
 
   } catch (error) {
-    client.query('ROLLBACK');
-    console.log(error)
+    await client.query('ROLLBACK');
+    console.error('Error al cambiar estado:', error);
     return res.status(500).json({
-      status: 'error'
-    })
-
+      error: 'Error al cambiar el estado del usuario'
+    });
   } finally {
     client.release();
   }
 };
 
-export const deleteUser = alterState("BORRADO");
-export const suspendUser = alterState("SUSPENDIDO");
+export const deleteUser = alterState('BORRADO');
+export const suspendUser = alterState('SUSPENDIDO');

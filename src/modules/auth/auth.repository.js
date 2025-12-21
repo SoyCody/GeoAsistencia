@@ -15,29 +15,29 @@ export async function crearPersona(client, persona) {
   return rows[0].id;
 };
 
-
-
-export async function crearPerfil(client, perfil) {
+export async function crearPerfil(client, perfilData) {
   const query = `
     INSERT INTO perfil (
       persona_id,
       codigo_empleado,
       cargo,
-      password_hash,
-      es_admin
+      password_hash
     )
-    VALUES ($1, $2, $3, $4, $5)
+    VALUES ($1, $2, $3, $4)
+    RETURNING id, codigo_empleado, cargo
   `;
+
   const values = [
-    perfil.personaId,
-    perfil.codigoEmpleado,
-    perfil.cargo,
-    perfil.passwordHash,
-    perfil.esAdmin
+    perfilData.personaId,
+    perfilData.codigoEmpleado,
+    perfilData.cargo,
+    perfilData.passwordHash
   ];
 
-  await client.query(query, values);
-};
+  const { rows } = await client.query(query, values);
+  return rows[0];
+}
+
 
 export async function checkEmail(client, email) {
   const query =`
