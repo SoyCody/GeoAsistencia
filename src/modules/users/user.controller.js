@@ -1,23 +1,13 @@
 import { pool } from '../../config/db.js';
-import { listUsers, verAdmin } from './user.repository.js';
+import { me, listUsers, verAdmin, changeState } from './user.repository.js';
+import { isUserAdmin } from './user.validator.js';
 
 export const getMe = async (req, res) => {
   const perfilId = req.user?.id; // ← JWT apunta a perfil.id
 
   try {
-    const result = await pool.query(
-      `
-      SELECT 
-        p.id, p.codigo_empleado, p.cargo,
-        p.es_admin, p.estado, p.created_at,
-        per.nombre_completo, per.email, per.telefono
-      FROM perfil p
-      INNER JOIN persona per ON p.persona_id = per.id
-      WHERE p.id = $1
-        AND p.estado = 'ACTIVO'
-      `,
-      [perfilId]
-    );
+
+    const result = await me(client, perfilId);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -43,7 +33,7 @@ const listUsersByState = (estado) => async (req, res) => {
   try {
     const result = await listUsers(client, estado);
 
-    if(result.rows.length  === 0){
+    if (result.rows.length === 0) {
       return res.status(404).json({
         message: `No se ha encontrado ningun usuario ${estado.toLowerCase()}`
       });
@@ -129,10 +119,10 @@ export const assignAdmin = async (req, res) => {
   }
 };
 
-export const revokeAdmin = async(req, res)=>{
+export const revokeAdmin = async (req, res) => {
   const client = await pool.connect();
-  try{
-    
+  try {
+
     const { id } = req.params;
     await client.query('BEGIN');
 
@@ -175,13 +165,59 @@ export const revokeAdmin = async(req, res)=>{
       }
     });
 
-  }catch(error){
+  } catch (error) {
     console.log(error);
     await client.query('ROLLBACK');
     return res.status(400).json({
       status: "error"
     })
-  } finally{
+  } finally {
     client.release();
   }
 };
+
+const alterState = (estado) => async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+
+    const { id } = req.params;
+    await client.query('BEGIN');
+
+    const admin = await isUserAdmin(client, id);
+
+    if (admin) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        message: "No puede alterar el estado de un administrador"
+      })
+    };
+
+    const usuario = await changeState(client, estado, id);
+    if (usuario.rowCount === 0) {
+      client.query("ROLLBACK");
+      return res.status(404).json({
+        message: "No se ha encontrado ningún usuario"
+      })
+    };
+    
+    await client.query('COMMIT');
+
+    return res.status(200).json({
+      message: "Estado asignado correctamente"
+    })
+
+  } catch (error) {
+    client.query('ROLLBACK');
+    console.log(error)
+    return res.status(500).json({
+      status: 'error'
+    })
+
+  } finally {
+    client.release();
+  }
+};
+
+export const deleteUser = alterState("BORRADO");
+export const suspendUser = alterState("SUSPENDIDO");

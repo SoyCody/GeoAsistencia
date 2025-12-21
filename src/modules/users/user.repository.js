@@ -1,3 +1,20 @@
+export async function me (client, id){
+  const query = (
+      `
+      SELECT 
+        p.id, p.codigo_empleado, p.cargo,
+        p.es_admin, p.estado, p.created_at,
+        per.nombre_completo, per.email, per.telefono
+      FROM perfil p
+      INNER JOIN persona per ON p.persona_id = per.id
+      WHERE p.id = $1
+        AND p.estado = 'ACTIVO'
+      `);
+
+    return await client.query(query, [id]);
+
+};
+
 export async function listUsers (client, state){
 
     const query = (
@@ -30,4 +47,24 @@ export async function verAdmin(client, id) {
 
   const result = await client.query(query, [id]);
   return result || null;
-}
+};
+
+export async function consultaAdmin(client, id){ 
+  const query = `
+    SELECT es_admin 
+    FROM perfil 
+    WHERE id = $1
+    LIMIT 1
+  `;
+  return await client.query(query, [id]);
+};
+
+export async function changeState(client, state, id ){
+  const query = (`
+    UPDATE perfil 
+    SET estado = $1, 
+      updated_at = NOW() 
+    WHERE id = $2;`)
+
+  return await client.query(query, [state, id]);
+};
