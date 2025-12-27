@@ -7,9 +7,9 @@ import { verificarConexionBD } from './config/db.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import cookieParser from 'cookie-parser';
+import sedeRoutes from './routes/sede.js';
+
 const JWT_SECRET = process.env.JWT_SECRET;
-
-
 
 dotenv.config();
 const app = express();
@@ -28,6 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
+app.use('/sede', sedeRoutes);
 
 app.listen(PORT, async ()=>{
     console.log('Servidor corriendo en puerto', PORT),

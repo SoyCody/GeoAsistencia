@@ -8,5 +8,7 @@ export const AUDIT_ACTIONS = {
 
 export const AUDIT_TABLES = {
   PERSONA: 'persona',
-  PERFIL: 'perfil'
+  PERFIL: 'perfil',
+  SEDE: 'sede',
+  GEOCERCA: 'geocerca'
 };

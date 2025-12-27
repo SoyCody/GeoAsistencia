@@ -1,4 +1,3 @@
-// auth.controller.js
 import { validateUser } from './auth.validator.js';
 import { crearPersona, crearPerfil, checkEmail } from './auth.repository.js';
 import { pool } from '../../config/db.js';

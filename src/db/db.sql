@@ -94,3 +94,7 @@ CREATE TABLE auditoria (
     detalle_cambio JSONB, 
     fecha_hora TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE sede
+ADD COLUMN latitud DOUBLE PRECISION,
+ADD COLUMN longitud DOUBLE PRECISION;

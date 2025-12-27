@@ -1,6 +1,5 @@
 import { pool } from '../../config/db.js';
 import { me, listUsers, verAdmin, changeState, changeRole, consultStateCode} from './user.repository.js';
-import { isUserAdmin } from './user.validator.js';
 import { auditarCambio } from '../auditoria/auditoria.service.js';
 import { AUDIT_ACTIONS, AUDIT_TABLES } from '../auditoria/auditoria.constants.js';
 
