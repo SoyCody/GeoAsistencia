@@ -30,45 +30,6 @@ El backend sigue una arquitectura modular basada en capas:
 
 Cada módulo es independiente y escalable.
 
-## Estructura de Carpetas
-
-src/
-├── config/
-│   ├── .env                # Variables de entorno
-│   └── db.js               # Configuración de PostgreSQL
-│
-├── db/
-│   └── db.sql              # Script inicial de base de datos
-│
-├── middlewares/
-│   └── auth.middleware.js  # Protección por JWT y roles
-│
-├── modules/
-│   ├── auth/
-│   │   ├── auth.controller.js
-│   │   ├── auth.repository.js
-│   │   ├── auth.utils.js
-│   │   └── auth.validator.js
-│   │
-│   ├── users/
-│   │   ├── user.controller.js
-│   │   ├── user.repository.js
-│   │   └── user.validator.js
-│   │
-│   └── auditoria/
-│       ├── auditoria.constants.js
-│       ├── auditoria.repository.js
-│       └── auditoria.service.js
-│
-├── routes/
-│   ├── auth.js
-│   └── user.js
-│
-├── utils/
-│   └── jwt.js
-│
-└── index.js                # Punto de entrada del servidor
-
 ## Configuración del Entorno
 
 Crear un archivo `.env` en `src/config` con las siguientes variables:
