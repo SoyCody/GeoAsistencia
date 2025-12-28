@@ -52,6 +52,7 @@ export const createSede = async (req, res) => {
     } catch (error) {
         console.log(error);
         await client.query('ROLLBACK');
+        console.error(error.message);
         return res.status(500).json({ message: 'Error interno' });
     } finally {
         client.release()
@@ -166,6 +167,8 @@ export const updateSede = async (req, res) => {
 
     } catch (error) {
         console.log(error);
+        await client.query('ROLLBACK');
+        console.error(error.message);
         return res.status(400).json({
             message: 'Hubo un error al actualizar la sede'
         })
@@ -221,6 +224,8 @@ export const deleteSede = async (req, res) => {
 
     } catch (error) {
         console.log(error);
+        await client.query('ROLLBACK');
+        console.error(error.message);
         return res.status(400).json({
             message: 'Hubo un error al eliminar la sede'
         })

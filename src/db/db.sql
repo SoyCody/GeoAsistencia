@@ -8,6 +8,8 @@ CREATE TABLE sede (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(100) NOT NULL,
     direccion TEXT,
+    latitud DOUBLE PRECISION,
+    longitud DOUBLE PRECISION,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() -- Columna añadida
 );

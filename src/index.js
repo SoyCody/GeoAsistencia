@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import cookieParser from 'cookie-parser';
 import sedeRoutes from './routes/sede.js';
+import geocercaRoutes from './routes/geocerca.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -29,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/sede', sedeRoutes);
+app.use('/geocerca', geocercaRoutes)
 
 app.listen(PORT, async ()=>{
     console.log('Servidor corriendo en puerto', PORT),
