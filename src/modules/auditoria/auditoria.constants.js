@@ -10,5 +10,6 @@ export const AUDIT_TABLES = {
   PERSONA: 'persona',
   PERFIL: 'perfil',
   SEDE: 'sede',
-  GEOCERCA: 'geocerca'
+  GEOCERCA: 'geocerca',
+  ASIGNACION_LABORAL: 'asignacion_laboral'
 };

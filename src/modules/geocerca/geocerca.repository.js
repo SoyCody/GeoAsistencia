@@ -66,7 +66,7 @@ export async function removeGeocerca(client, id) {
     const query = `
         DELETE FROM geocerca
         WHERE id = $1
-        RETURNING id -- Solo retornamos ID para confirmar
+        RETURNING id, nombre_zona, radio_metros
     `;
     const result = await client.query(query, [id]);
     return result.rows[0];

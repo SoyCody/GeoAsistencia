@@ -50,6 +50,7 @@ CREATE TABLE perfil (
     password_hash VARCHAR(255) NOT NULL, 
     es_admin BOOLEAN DEFAULT FALSE,
     estado VARCHAR (20) DEFAULT 'ACTIVO',
+    en_sede BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() 
 );
