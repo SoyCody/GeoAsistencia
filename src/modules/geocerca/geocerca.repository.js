@@ -103,3 +103,22 @@ export async function readGeocercaById(pool, id){
     const result = await pool.query(query, [id]);
     return result.rows[0];
 };
+
+export async function listar(pool, geocerca_id) {
+  const query = `
+    SELECT DISTINCT
+      s.nombre AS nombre_sede,
+      pf.codigo_empleado,
+      pf.cargo,
+      pf.estado
+    FROM geocerca g
+    INNER JOIN sede s ON s.id = g.sede_id
+    INNER JOIN asignacion_laboral al ON g.id = al.geocerca_id
+    INNER JOIN perfil pf ON al.perfil_id = pf.id
+    WHERE g.id = $1
+    ORDER BY pf.codigo_empleado;
+  `;
+
+  const result = await pool.query(query, [geocerca_id]);
+  return result.rows;
+}

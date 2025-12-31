@@ -7,7 +7,8 @@ import {
     readById,
     verSede,
     modifySede,
-    borrar
+    borrar,
+    listarUsuarios
 } from "./sede.repository.js";
 import { auditarCambio } from "../auditoria/auditoria.service.js";
 import { AUDIT_ACTIONS, AUDIT_TABLES } from "../auditoria/auditoria.constants.js";
@@ -232,4 +233,35 @@ export const deleteSede = async (req, res) => {
     } finally {
         client.release();
     }
+};
+
+export const listUsersBySede = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (!id) {
+      return res.status(400).json({
+        message: 'Debe ingresar el id de la sede'
+      });
+    }
+
+    const users = await listarUsuarios(pool, id);
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        message: 'No se encontraron usuarios para esta sede'
+      });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: users
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: 'Error en el servidor'
+    });
+  }
 };

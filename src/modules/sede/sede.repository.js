@@ -83,3 +83,22 @@ export async function borrar(client, id){
     await client.query(query, [id]);
     return true;
 }
+
+export async function listarUsuarios(pool, sede_id) {
+  const query = `
+    SELECT DISTINCT
+      s.nombre AS nombre_sede,
+      pf.codigo_empleado,
+      pf.cargo,
+      pf.estado
+    FROM sede s
+    INNER JOIN geocerca g ON s.id = g.sede_id
+    INNER JOIN asignacion_laboral al ON g.id = al.geocerca_id
+    INNER JOIN perfil pf ON al.perfil_id = pf.id
+    WHERE s.id = $1
+    ORDER BY pf.codigo_empleado;
+  `;
+
+  const result = await pool.query(query, [sede_id]);
+  return result.rows;
+}

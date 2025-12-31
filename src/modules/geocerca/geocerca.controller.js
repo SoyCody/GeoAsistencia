@@ -8,7 +8,8 @@ import {
     alterGeocerca,
     removeGeocerca,
     readGeocerca,
-    readGeocercaById
+    readGeocercaById,
+    listar
 } from "./geocerca.repository.js";
 import { auditarCambio } from "../auditoria/auditoria.service.js";
 import { AUDIT_TABLES, AUDIT_ACTIONS } from "../auditoria/auditoria.constants.js";
@@ -278,3 +279,34 @@ export const listGeocercaById = async (req, res) => {
         })
     }
 };   
+
+export const listUsersByGeocerca = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (!id) {
+      return res.status(400).json({
+        message: 'Debe ingresar el id de la geocerca'
+      });
+    }
+
+    const users = await listar(pool, id);
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        message: 'No se encontraron usuarios para esta geocerca'
+      });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: users
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: 'Error en el servidor'
+    });
+  }
+};
