@@ -1,4 +1,3 @@
-// registro.repository.js
 export async function validarGeocercaAsignada(client, perfilId, lat, lon) {
   const query = `
     SELECT g.id, g.nombre_zona
