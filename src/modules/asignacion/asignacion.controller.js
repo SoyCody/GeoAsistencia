@@ -2,6 +2,7 @@ import { pool } from '../../config/db.js';
 import { assign, watchAssign, existsAssign, removeAssign } from './assign.repository.js';
 import { auditarCambio } from '../auditoria/auditoria.service.js';
 import { AUDIT_ACTIONS, AUDIT_TABLES } from '../auditoria/auditoria.constants.js'; 
+import { validateHorario } from '../../utils/horario.js';
 
 export const assignWorker = async (req, res) => {
     const client = await pool.connect();
@@ -10,7 +11,7 @@ export const assignWorker = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const { perfilId, geocercaId } = req.body;
+        const { perfilId, geocercaId, hora_entrada, hora_salida } = req.body;
 
         if (!perfilId ) {
             await client.query('ROLLBACK');
@@ -25,6 +26,8 @@ export const assignWorker = async (req, res) => {
                 message: 'El id de la geocerca es obligatorio'
             });
         }
+
+        const horario = validateHorario(hora_entrada, hora_salida);
 
         const perfilExists = await watchAssign(client, perfilId);
         if (perfilExists.rows.length === 0) {
@@ -42,7 +45,7 @@ export const assignWorker = async (req, res) => {
             });
         }
 
-        await assign(client, perfilId, geocercaId);
+        await assign(client, perfilId, geocercaId, horario.hora_entrada, horario.hora_salida);
 
         await auditarCambio(client, {
             adminPerfilId: idAdmin,
@@ -50,7 +53,9 @@ export const assignWorker = async (req, res) => {
             accion: AUDIT_ACTIONS.CREATE,
             detalle: {
                 perfilId,
-                geocercaId
+                geocercaId,
+                hora_entrada: horario.hora_entrada,
+                hora_salida: horario.hora_salida
             }
         });
 
@@ -64,7 +69,8 @@ export const assignWorker = async (req, res) => {
         await client.query('ROLLBACK');
         console.error(error);
         return res.status(500).json({
-            message: 'Error interno del servidor'
+            message: 'Error interno del servidor',
+            message: error.message
         });
     } finally {
         client.release();
@@ -78,7 +84,7 @@ export const changeAssign = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const { perfilId, geocercaAnteriorId, geocercaNuevaId } = req.body;
+        const { perfilId, geocercaAnteriorId, geocercaNuevaId, hora_entrada, hora_salida} = req.body;
 
         if (!perfilId) {
             await client.query('ROLLBACK');
@@ -101,6 +107,8 @@ export const changeAssign = async (req, res) => {
             });
         }
 
+        const horario = validateHorario(hora_entrada, hora_salida);
+
         const existsOld = await existsAssign(client, perfilId, geocercaAnteriorId);
         if (!existsOld) {
             await client.query('ROLLBACK');
@@ -118,7 +126,7 @@ export const changeAssign = async (req, res) => {
         }
 
         await removeAssign(client, perfilId, geocercaAnteriorId);
-        await assign(client, perfilId, geocercaNuevaId);
+        await assign(client, perfilId, geocercaNuevaId, horario.hora_entrada, horario.hora_salida);
 
         await auditarCambio(client, {
             adminPerfilId: idAdmin,

@@ -65,7 +65,10 @@ CREATE TABLE asignacion_laboral (
     geocerca_id UUID REFERENCES geocerca(id) ON DELETE CASCADE,
     PRIMARY KEY (perfil_id, geocerca_id), 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() -- Columna añadida
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    hora_entrada TIMESTAMP WITH TIME,
+    hora_salida TIMESTAMP WITH TIME,
 );
 
 -- =============================================
@@ -83,7 +86,7 @@ CREATE TABLE registro_asistencia (
     latitud_movil DECIMAL(10, 8) NOT NULL,
     longitud_movil DECIMAL(11, 8) NOT NULL,
     ubicacion_movil GEOGRAPHY(POINT, 4326), 
-    
+
     es_valido BOOLEAN DEFAULT FALSE,
     nota_auditoria VARCHAR(255) 
 );

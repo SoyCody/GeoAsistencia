@@ -1,9 +1,9 @@
-export async function assign(client, perfilId, geocercaId){
+export async function assign(client, perfilId, geocercaId, hora_entrada, hora_salida){
     const query = `
-        INSERT INTO asignacion_laboral (perfil_id, geocerca_id, created_at, updated_at)
-        VALUES ($1, $2, NOW(), NOW())
+        INSERT INTO asignacion_laboral (perfil_id, geocerca_id, created_at, updated_at, hora_entrada, hora_salida )
+        VALUES ($1, $2, NOW(), NOW(), $3, $4)
     `;
-    return await client.query(query, [perfilId, geocercaId]);
+    return await client.query(query, [perfilId, geocercaId, hora_entrada, hora_salida]);
 };
 
 export async function watchAssign(client, perfilId){

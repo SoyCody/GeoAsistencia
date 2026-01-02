@@ -10,6 +10,7 @@ import cookieParser from 'cookie-parser';
 import sedeRoutes from './routes/sede.js';
 import geocercaRoutes from './routes/geocerca.js';
 import assignRoutes  from './routes/asignacion.js';
+import registroRoutes from './routes/registro.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -33,6 +34,7 @@ app.use('/user', userRoutes);
 app.use('/sede', sedeRoutes);
 app.use('/geocerca', geocercaRoutes)
 app.use('/assign', assignRoutes);
+app.use('/registro', registroRoutes)
 
 app.listen(PORT, async ()=>{
     console.log('Servidor corriendo en puerto', PORT),
