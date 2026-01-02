@@ -46,3 +46,13 @@ export async function checkEmail(client, email) {
   const result = await client.query(query, [email]);
   return result.rowCount > 0;
 };
+
+export async function getEstadoPerfil(pool, id) {
+    const query = `
+        SELECT estado 
+        FROM perfil 
+        WHERE id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    return result.rows[0]; 
+}

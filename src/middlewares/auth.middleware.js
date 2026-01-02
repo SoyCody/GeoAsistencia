@@ -6,7 +6,6 @@ const JWT_SECRET = process.env.JWT_SECRET;
 export const auth = async (req, res, next) => {
   let token;
 
-  // 1. Obtener token
   if (req.cookies?.access_token) {
     token = req.cookies.access_token;
   } else if (req.headers.authorization?.startsWith("Bearer ")) {
@@ -20,10 +19,8 @@ export const auth = async (req, res, next) => {
   }
 
   try {
-    // 2. Verificar token
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    // 3. Buscar perfil (IDENTIDAD REAL)
     const result = await pool.query(
       `
         SELECT 
@@ -44,7 +41,6 @@ export const auth = async (req, res, next) => {
       });
     }
 
-    // 4. Adjuntar info mínima al request
     req.user = {
       id: result.rows[0].id,
       esAdmin: result.rows[0].es_admin

@@ -1,5 +1,5 @@
 import { validateUser } from './auth.validator.js';
-import { crearPersona, crearPerfil, checkEmail } from './auth.repository.js';
+import { crearPersona, crearPerfil, checkEmail, getEstadoPerfil } from './auth.repository.js';
 import { pool } from '../../config/db.js';
 import { generarCodigo } from './auth.utils.js';
 import bcrypt from 'bcrypt';
@@ -99,6 +99,21 @@ export const login = async (req, res) => {
         }
 
         const perfil = result.rows[0];
+        const estado = await getEstadoPerfil(pool, perfil.perfil_id)
+
+        if(estado.estado === 'SUSPENDIDO'){
+            return res.status(400).json({
+                status:'error',
+                message:'Su cuenta esta suspendida, contactese con el administrador.'
+            })
+        }
+
+        if(estado.estado === 'BORRADO'){
+            return res.status(400).json({
+                status:'error',
+                message:'Su cuenta ha sido borrada.'
+            })
+        }
 
         const validPassword = await bcrypt.compare(password, perfil.password_hash);
         if (!validPassword) {
