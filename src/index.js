@@ -29,12 +29,12 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/auth', authRoutes);
-app.use('/user', userRoutes);
-app.use('/sede', sedeRoutes);
-app.use('/geocerca', geocercaRoutes)
-app.use('/assign', assignRoutes);
-app.use('/registro', registroRoutes)
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/sede', sedeRoutes);
+app.use('/api/geocerca', geocercaRoutes)
+app.use('/api/assign', assignRoutes);
+app.use('/api/registro', registroRoutes)
 
 app.listen(PORT, async ()=>{
     console.log('Servidor corriendo en puerto', PORT),
