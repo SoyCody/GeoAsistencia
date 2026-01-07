@@ -22,19 +22,22 @@ app.use(cookieParser());
 app.use(helmet());
 app.use(morgan('dev'));
 
-app.use(cors({origin:'*', credentials:true}));
+app.use(cors({
+    origin:'http://localhost:5173', 
+    credentials:true
+}));
 const PORT = 3000;
 
 // Parseo de cuerpos
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/sede', sedeRoutes);
-app.use('/api/geocerca', geocercaRoutes)
-app.use('/api/assign', assignRoutes);
-app.use('/api/registro', registroRoutes)
+app.use('/auth', authRoutes);
+app.use('/user', userRoutes);
+app.use('/sede', sedeRoutes);
+app.use('/geocerca', geocercaRoutes)
+app.use('/assign', assignRoutes);
+app.use('/registro', registroRoutes)
 
 app.listen(PORT, async ()=>{
     console.log('Servidor corriendo en puerto', PORT),
