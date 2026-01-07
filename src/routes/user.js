@@ -7,7 +7,11 @@ import  {
     assignAdmin, 
     revokeAdmin, 
     deleteUser, 
-    suspendUser
+    suspendUser,
+    actives,
+    suspended,
+    deleted,
+    countTotal
 } from '../modules/users/user.controller.js';
 import { auth, isAdmin } from '../middlewares/auth.middleware.js';
 
@@ -26,5 +30,10 @@ router.get('/list/suspended', auth, isAdmin, listSuspended);
 router.get('/list/deleted', auth, isAdmin, listDeleted);
 router.put('/delete/:id', auth, isAdmin, deleteUser);
 router.put('/suspend/:id', auth, isAdmin, suspendUser);
+
+router.get('/actives', auth, isAdmin, actives);
+router.get('/suspended', auth, isAdmin, suspended);
+router.get('/deleted', auth, isAdmin, deleted);
+router.get('/total', auth, isAdmin, countTotal);
 
 export default router;

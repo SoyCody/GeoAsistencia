@@ -8,7 +8,8 @@ import {
     verSede,
     modifySede,
     borrar,
-    listarUsuarios
+    listarUsuarios,
+    countSedes
 } from "./sede.repository.js";
 import { auditarCambio } from "../auditoria/auditoria.service.js";
 import { AUDIT_ACTIONS, AUDIT_TABLES } from "../auditoria/auditoria.constants.js";
@@ -265,3 +266,27 @@ export const listUsersBySede = async (req, res) => {
     });
   }
 };
+
+export const sedes = async(req, res)=>{
+    try{
+        const valor = await countSedes(pool);
+        if(valor === 0){
+            return res.status(200).json({
+                conteo: 0,
+                message:'No hay sedes registradas'
+            })    
+        }
+
+        return res.status(200).json({
+            status:'success',
+            conteo: valor
+        })
+
+    }catch(error){
+        console.log(error);
+        return res.status(400).json({
+            status: 'error',
+            message: 'Hubo un error al obtener las sedes'
+        })
+    }
+}

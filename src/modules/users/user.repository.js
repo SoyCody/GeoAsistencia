@@ -108,3 +108,23 @@ export async function consultaAdmin(client, id) {
   `;
   return await client.query(query, [id]);
 }
+
+export async function countUsers(pool, state) {
+  const query = `
+    SELECT COUNT(*) AS total
+    FROM perfil
+    WHERE estado = $1
+  `;
+
+  const result = await pool.query(query, [state]);
+  return Number(result.rows[0].total);
+}
+
+export async function countEveryone(pool){
+  const query = `
+    SELECT COUNT(*) AS total
+    FROM perfil
+  `
+  const result = await pool.query(query);
+  return Number(result.rows[0].total);
+}

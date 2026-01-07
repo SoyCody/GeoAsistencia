@@ -100,3 +100,29 @@ export async function obtenerAsignacion(client, perfilId, geocercaId) {
   const result = await client.query(query, [perfilId, geocercaId]);
   return result.rows[0] || null;
 }
+
+export async function countAsistencias(pool) {
+  const query = `
+    SELECT COUNT(*) AS total_asistencias
+    FROM registro_asistencia
+    WHERE tipo_evento = 'ENTRADA'
+      AND fecha_hora_servidor::date = CURRENT_DATE
+  `;
+
+  const result = await pool.query(query);
+  return Number(result.rows[0].total_asistencias);
+}
+
+
+export async function countAtrasos(pool){
+  const query = `
+    SELECT COUNT(*) AS total_atrasos
+    FROM registro_asistencia
+    WHERE tipo_evento = 'ENTRADA'
+    AND fecha_hora_servidor::date = CURRENT_DATE
+    AND nota_auditoria = 'Atrasado';
+  `;
+
+  const result = await pool.query(query);
+  return Number(result.rows[0].total_atrasos);
+}

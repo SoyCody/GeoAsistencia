@@ -5,7 +5,9 @@ import {
     validarGeocercaAsignada,
     registrarAsistencia,
     actualizarPerfil,
-    obtenerAsignacion
+    obtenerAsignacion,
+    countAsistencias,
+    countAtrasos
 } from './registro.repository.js';
 import { validateCoordenadas } from './registro.validator.js'
 
@@ -206,3 +208,52 @@ export const salida = async (req, res) => {
         client.release();
     }
 };
+
+export const asistencias = async(req, res)=>{
+    try{
+        const valor = await countAsistencias(pool);
+
+        if(valor === 0){
+            return res.status(200).json({
+                conteo: 0,
+                message:'Nadie registra su entrada aún'
+            })
+        }
+
+        return res.status(200).json({
+            status:'success',
+            conteo: valor
+        })
+
+    }catch(error){
+        console.log(error);
+        return res.status(400).json({
+            status:'error'
+        })
+    }
+};
+
+export const atrasos = async(req, res)=>{
+    try{
+        const valor = await countAtrasos(pool);
+        
+        if(valor === 0){
+            return res.status(200).json({
+                conteo: 0,
+                message:'No hay atrasos aún'
+
+            })
+        }
+
+        return res.status(200).json({
+            status:'success',
+            conteo: valor
+        })
+
+    }catch(error){
+        console.log(error);
+        return res.status(400).json({
+            status:'error'
+        })
+    }
+}

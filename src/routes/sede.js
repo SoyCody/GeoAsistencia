@@ -6,7 +6,8 @@ import {
     getSedeById, 
     updateSede, 
     deleteSede,
-    listUsersBySede
+    listUsersBySede,
+    sedes
 } from '../modules/sede/sede.controller.js';
 
 
@@ -18,5 +19,6 @@ router.get('/list/:id', auth, isAdmin, getSedeById);
 router.put('/update/:id', auth, isAdmin, updateSede);
 router.delete('/delete/:id', auth, isAdmin, deleteSede);
 router.get('/users/:id', auth, isAdmin, listUsersBySede);
+router.get('/total', auth, isAdmin, sedes)
 
 export default router;

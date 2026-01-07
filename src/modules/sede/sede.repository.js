@@ -102,3 +102,11 @@ export async function listarUsuarios(pool, sede_id) {
   const result = await pool.query(query, [sede_id]);
   return result.rows;
 }
+
+export async function countSedes(pool){
+  const query = `
+    SELECT COUNT(*) AS total_sedes FROM sede;
+  `;
+  const result = await pool.query(query);
+  return result.rows[0].total_sedes;
+}

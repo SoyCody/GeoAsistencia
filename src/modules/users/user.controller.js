@@ -1,5 +1,15 @@
 import { pool } from '../../config/db.js';
-import { me, listUsers, verAdmin, changeState, changeRole, consultStateCode} from './user.repository.js';
+import { 
+  me, 
+  listUsers, 
+  verAdmin, 
+  changeState, 
+  changeRole, 
+  consultStateCode,
+  watchUser,
+  countUsers,
+  countEveryone
+} from './user.repository.js';
 import { auditarCambio } from '../auditoria/auditoria.service.js';
 import { AUDIT_ACTIONS, AUDIT_TABLES } from '../auditoria/auditoria.constants.js';
 
@@ -98,7 +108,7 @@ const listUsersByState = (estado) => async (req, res) => {
 
 export const listActives = listUsersByState("ACTIVO");
 export const listSuspended = listUsersByState("SUSPENDIDO");
-export const listDeleted = listUsersByState("ELIMINADO");
+export const listDeleted = listUsersByState("BORRADO");
 
 export const assignAdmin = async (req, res) => {
   const client = await pool.connect();
@@ -325,3 +335,37 @@ const alterState = (estado) => async (req, res) => {
 
 export const deleteUser = alterState('BORRADO');
 export const suspendUser = alterState('SUSPENDIDO');
+
+const countByState =(estado) => async(req, res) => {
+  try{
+    const conteo = await countUsers(pool, estado);
+     return res.status(200).json({
+      status:'succes',
+      count: conteo
+     })
+  }catch(error){
+    console.log(error);
+    return res.status(400).json({
+      message:'Error al contar usuarios'
+    })
+  }
+};
+
+export const actives = countByState('ACTIVO');
+export const suspended = countByState('SUSPENDIDO');
+export const deleted = countByState('BORRADO');
+
+export const countTotal = async (req, res)=>{
+  try{
+      const total = await countEveryone(pool);
+      return res.status(200).json({
+        status:'success',
+        count: total
+      })
+  }catch(error){
+    console.log(error);
+    return res.status(400).json({
+      state:'error'
+    })
+  }
+}
