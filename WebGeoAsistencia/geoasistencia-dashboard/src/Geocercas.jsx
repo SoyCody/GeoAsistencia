@@ -4,7 +4,7 @@ export default function Geocercas() {
       {/* HEADER */}
       <div style={styles.header}>
         <div>
-          <h1 style={styles.title}>   Gestión de Geocercas</h1>
+          <h1 style={styles.title}>Gestión de Geocercas</h1>
           <p style={styles.subtitle}>
             Defina zonas de control por sede para validar asistencias
           </p>
@@ -30,7 +30,7 @@ export default function Geocercas() {
           </thead>
           <tbody>
             <tr>
-              <td style={styles.td}>Quito Norte</td>
+              <td style={styles.td}>Loja</td>
               <td style={styles.td}>Macará</td>
               <td style={styles.td}>-4.38269</td>
               <td style={styles.td}>-79.94549</td>
@@ -44,16 +44,33 @@ export default function Geocercas() {
         </table>
       </div>
 
-      {/* FORMULARIO */}
+      {/* FORMULARIO + MAPA */}
       <div style={styles.card}>
         <h3 style={styles.cardTitle}>Crear nueva geocerca</h3>
 
-        <div style={styles.formGrid}>
-          <Input placeholder="Nombre de la sede" />
-          <Input placeholder="Nombre de la zona" />
-          <Input placeholder="Latitud" />
-          <Input placeholder="Longitud" />
-          <Input placeholder="Radio en metros" />
+        <div style={styles.formContainer}>
+          {/* FORM */}
+          <div style={styles.formGrid}>
+            <Input placeholder="Nombre de la sede" defaultValue="Loja" />
+            <Input placeholder="Nombre de la zona" defaultValue="Macará" />
+            <Input placeholder="Latitud" defaultValue="-4.38269" />
+            <Input placeholder="Longitud" defaultValue="-79.94549" />
+            <Input placeholder="Radio en metros" defaultValue="100" />
+          </div>
+
+          {/* MAPA */}
+          <div style={styles.map}>
+            <iframe
+              title="Mapa Geocerca"
+              width="100%"
+              height="100%"
+              style={{ border: 0, borderRadius: 10 }}
+              loading="lazy"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+              src="https://www.google.com/maps?q=-4.38269,-79.94549&z=15&output=embed"
+            />
+          </div>
         </div>
 
         <div style={styles.formActions}>
@@ -65,49 +82,52 @@ export default function Geocercas() {
   );
 }
 
+/* ===================== */
 /* COMPONENTES */
+/* ===================== */
 
 function Input(props) {
   return <input {...props} style={styles.input} />;
 }
 
+/* ===================== */
 /* ESTILOS EMPRESARIALES */
+/* ===================== */
 
 const styles = {
   container: {
     width: "100%",
-    maxWidth: "100%",
   },
 
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "30px",
+    marginBottom: 30,
   },
 
   title: {
     margin: 0,
-    fontSize: "28px",
+    fontSize: 28,
     color: "#0f172a",
   },
 
   subtitle: {
-    marginTop: "6px",
+    marginTop: 6,
     color: "#64748b",
   },
 
   card: {
     background: "#ffffff",
-    padding: "24px",
-    borderRadius: "14px",
-    marginBottom: "24px",
+    padding: 24,
+    borderRadius: 14,
+    marginBottom: 24,
     boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
   },
 
   cardTitle: {
-    marginBottom: "16px",
-    fontSize: "18px",
+    marginBottom: 16,
+    fontSize: 18,
   },
 
   table: {
@@ -117,13 +137,13 @@ const styles = {
 
   th: {
     textAlign: "left",
-    padding: "12px",
+    padding: 12,
     borderBottom: "2px solid #e5e7eb",
     color: "#334155",
   },
 
   td: {
-    padding: "12px",
+    padding: 12,
     borderBottom: "1px solid #e5e7eb",
     color: "#475569",
   },
@@ -133,7 +153,7 @@ const styles = {
     border: "none",
     color: "#2563eb",
     cursor: "pointer",
-    marginRight: "12px",
+    marginRight: 12,
   },
 
   linkDanger: {
@@ -143,23 +163,38 @@ const styles = {
     cursor: "pointer",
   },
 
+  formContainer: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 24,
+  },
+
   formGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "18px",
+    gap: 18,
   },
 
   input: {
-    padding: "12px",
-    borderRadius: "10px",
+    padding: 12,
+    borderRadius: 10,
     border: "1px solid #d1d5db",
-    fontSize: "14px",
+    fontSize: 14,
+  },
+
+  map: {
+    width: "100%",
+    minHeight: 280,
+    borderRadius: 10,
+    overflow: "hidden",
+    border: "1px solid #e5e7eb",
+    background: "#f8fafc",
   },
 
   formActions: {
     display: "flex",
-    gap: "14px",
-    marginTop: "24px",
+    gap: 14,
+    marginTop: 24,
   },
 
   btnPrimary: {
@@ -167,7 +202,7 @@ const styles = {
     color: "#fff",
     border: "none",
     padding: "12px 20px",
-    borderRadius: "10px",
+    borderRadius: 10,
     cursor: "pointer",
   },
 
@@ -176,7 +211,7 @@ const styles = {
     color: "#111827",
     border: "none",
     padding: "12px 20px",
-    borderRadius: "10px",
+    borderRadius: 10,
     cursor: "pointer",
   },
 };

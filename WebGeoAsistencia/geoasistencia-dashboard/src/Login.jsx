@@ -1,43 +1,56 @@
 import { useState } from "react";
+import { authService } from "./api/authService";
 
 export default function Login({ onLogin }) {
-  const [correo, setCorreo] = useState("");
+  const [codigo, setCodigo] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    // Credenciales de prueba
-    if (correo === "admin@geo.com" && password === "1234") {
-      onLogin({ rol: "admin", correo });
-    } else if (correo === "usuario@geo.com" && password === "1234") {
-      onLogin({ rol: "usuario", correo });
-    } else {
-      setError("Credenciales incorrectas");
+    try {
+      // 🔐 Formato requerido por el backend
+      const passwordFormateada = `Password@${password}`;
+
+      const data = await authService.login(
+        codigo,
+        passwordFormateada
+      );
+
+      localStorage.setItem("token", data.token);
+      onLogin(data.usuario);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Código o contraseña incorrectos"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div style={styles.page}>
-      {/* LADO IZQUIERDO */}
       <div style={styles.left}>
         <h1 style={styles.brand}>GeoAsistencia</h1>
         <p style={styles.slogan}>
-          Plataforma de control, gestión de usuarios y sedes empresariales.
+          Plataforma empresarial de control y gestión de asistencias.
         </p>
       </div>
 
-      {/* LADO DERECHO */}
       <div style={styles.right}>
         <form style={styles.card} onSubmit={handleSubmit}>
           <h2 style={styles.title}>Iniciar sesión</h2>
 
           <input
-            type="email"
-            placeholder="Correo"
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
+            type="text"
+            placeholder="Código"
+            value={codigo}
+            onChange={(e) => setCodigo(e.target.value)}
             style={styles.input}
             required
           />
@@ -53,54 +66,44 @@ export default function Login({ onLogin }) {
 
           {error && <p style={styles.error}>{error}</p>}
 
-          <button type="submit" style={styles.button}>
-            Ingresar
+          <button
+            type="submit"
+            style={styles.button}
+            disabled={loading}
+          >
+            {loading ? "Ingresando..." : "Ingresar"}
           </button>
-
-          <div style={styles.help}>
-            <p><b>Admin:</b> admin@geo.com / 1234</p>
-            <p><b>Usuario:</b> usuario@geo.com / 1234</p>
-          </div>
         </form>
       </div>
     </div>
   );
 }
 
-/* ===================== */
-/* ESTILOS PROFESIONALES */
-/* ===================== */
+/* ===== ESTILOS ===== */
 
 const styles = {
   page: {
     display: "flex",
     height: "100vh",
-    width: "100vw",
     fontFamily: "Segoe UI, sans-serif",
   },
-
   left: {
     flex: 1,
-    background: "linear-gradient(135deg, #020617, #020617)",
+    background: "#020617",
     color: "#fff",
     padding: "80px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
   },
-
   brand: {
     fontSize: "42px",
     marginBottom: "20px",
   },
-
   slogan: {
     fontSize: "18px",
-    maxWidth: "420px",
-    lineHeight: 1.5,
     opacity: 0.85,
   },
-
   right: {
     flex: 1,
     background: "#f8fafc",
@@ -108,7 +111,6 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
   },
-
   card: {
     width: "100%",
     maxWidth: "420px",
@@ -117,13 +119,10 @@ const styles = {
     borderRadius: "14px",
     boxShadow: "0 20px 40px rgba(0,0,0,0.08)",
   },
-
   title: {
     marginBottom: "30px",
-    fontSize: "26px",
     textAlign: "center",
   },
-
   input: {
     width: "100%",
     padding: "14px",
@@ -132,7 +131,6 @@ const styles = {
     border: "1px solid #cbd5f5",
     fontSize: "15px",
   },
-
   button: {
     width: "100%",
     padding: "14px",
@@ -142,19 +140,10 @@ const styles = {
     color: "#fff",
     fontSize: "16px",
     cursor: "pointer",
-    marginTop: "10px",
   },
-
   error: {
-    color: "red",
+    color: "#dc2626",
     marginBottom: "12px",
     textAlign: "center",
-  },
-
-  help: {
-    marginTop: "25px",
-    fontSize: "13px",
-    textAlign: "center",
-    color: "#64748b",
   },
 };

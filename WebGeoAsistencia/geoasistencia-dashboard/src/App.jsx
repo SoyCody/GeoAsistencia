@@ -4,6 +4,7 @@ import Dashboard from "./Dashboard";
 import Usuarios from "./Usuarios";
 import Sedes from "./Sedes";
 import Geocercas from "./Geocercas";
+import Auditoria from "./Auditoria"; // ✅ NUEVO
 
 export default function App() {
   const [usuario, setUsuario] = useState(null);
@@ -26,7 +27,7 @@ export default function App() {
             style={vista === "dashboard" ? styles.menuActive : styles.menuItem}
             onClick={() => setVista("dashboard")}
           >
-             Panel de control
+            Panel de control
           </li>
 
           {usuario.rol === "admin" && (
@@ -34,7 +35,7 @@ export default function App() {
               style={vista === "usuarios" ? styles.menuActive : styles.menuItem}
               onClick={() => setVista("usuarios")}
             >
-               Usuarios
+              Usuarios
             </li>
           )}
 
@@ -42,15 +43,25 @@ export default function App() {
             style={vista === "sedes" ? styles.menuActive : styles.menuItem}
             onClick={() => setVista("sedes")}
           >
-             Sedes
+            Sedes
           </li>
 
           <li
             style={vista === "geocercas" ? styles.menuActive : styles.menuItem}
             onClick={() => setVista("geocercas")}
           >
-             Geocercas
+            Geocercas
           </li>
+
+          {/* ✅ AUDITORÍA (SOLO ADMIN) */}
+          {usuario.rol === "admin" && (
+            <li
+              style={vista === "auditoria" ? styles.menuActive : styles.menuItem}
+              onClick={() => setVista("auditoria")}
+            >
+              Auditoría
+            </li>
+          )}
 
           <li
             style={styles.logout}
@@ -70,6 +81,7 @@ export default function App() {
         {vista === "usuarios" && <Usuarios />}
         {vista === "sedes" && <Sedes />}
         {vista === "geocercas" && <Geocercas />}
+        {vista === "auditoria" && <Auditoria />} {/* ✅ NUEVO */}
       </main>
     </div>
   );

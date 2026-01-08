@@ -3,7 +3,7 @@ export default function Sedes() {
     <>
       {/* HEADER */}
       <div style={styles.header}>
-        <h1 style={styles.title}> Gestión de Sedes</h1>
+        <h1 style={styles.title}>Gestión de Sedes</h1>
         <button style={styles.btnPrimary}>➕ Nueva Sede</button>
       </div>
 
@@ -21,20 +21,10 @@ export default function Sedes() {
           </thead>
           <tbody>
             <tr>
-              <td style={styles.td}>Quito Norte</td>
-              <td style={styles.td}>-0.1234</td>
-              <td style={styles.td}>-78.5432</td>
-              <td style={styles.td}>100 m</td>
-              <td style={styles.td}>
-                <button style={styles.link}>Editar</button>
-                <button style={styles.linkDanger}>Eliminar</button>
-              </td>
-            </tr>
-            <tr>
               <td style={styles.td}>Loja Matriz</td>
-              <td style={styles.td}>-3.9876</td>
-              <td style={styles.td}>-79.1234</td>
-              <td style={styles.td}>150 m</td>
+              <td style={styles.td}>-3.99313</td>
+              <td style={styles.td}>-79.20422</td>
+              <td style={styles.td}>100 m</td>
               <td style={styles.td}>
                 <button style={styles.link}>Editar</button>
                 <button style={styles.linkDanger}>Eliminar</button>
@@ -47,10 +37,11 @@ export default function Sedes() {
       {/* FORMULARIO */}
       <Section title="Crear nueva sede">
         <div style={styles.formContainer}>
+          {/* FORM */}
           <div style={styles.form}>
             <input style={styles.input} placeholder="Nombre de la sede" />
-            <input style={styles.input} placeholder="Latitud" />
-            <input style={styles.input} placeholder="Longitud" />
+            <input style={styles.input} placeholder="Latitud" defaultValue="-3.99313" />
+            <input style={styles.input} placeholder="Longitud" defaultValue="-79.20422" />
             <input style={styles.input} placeholder="Radio (metros)" />
 
             <div style={styles.actions}>
@@ -59,8 +50,18 @@ export default function Sedes() {
             </div>
           </div>
 
+          {/* MAPA */}
           <div style={styles.map}>
-            <p style={{ color: "#666" }}>Vista previa del mapa</p>
+            <iframe
+              title="Mapa Loja"
+              width="100%"
+              height="100%"
+              style={{ border: 0, borderRadius: 8 }}
+              loading="lazy"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+              src="https://www.google.com/maps?q=-3.99313,-79.20422&z=14&output=embed"
+            />
           </div>
         </div>
       </Section>
@@ -153,6 +154,7 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: 20,
+    width: "100%",
   },
   form: {
     display: "flex",
@@ -163,6 +165,7 @@ const styles = {
     padding: 10,
     borderRadius: 8,
     border: "1px solid #d1d5db",
+    fontSize: 14,
   },
   actions: {
     display: "flex",
@@ -170,12 +173,11 @@ const styles = {
     marginTop: 10,
   },
   map: {
+    width: "100%",
+    minHeight: 300,
     border: "1px solid #e5e7eb",
     borderRadius: 8,
-    minHeight: 200,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    overflow: "hidden",
     backgroundColor: "#f9fafb",
   },
 };
