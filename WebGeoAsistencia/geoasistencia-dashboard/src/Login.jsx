@@ -13,16 +13,14 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      // 🔐 Formato requerido por el backend
-      const passwordFormateada = `Password@${password}`;
 
       const data = await authService.login(
         codigo,
-        passwordFormateada
+        password
       );
 
       localStorage.setItem("token", data.token);
-      onLogin(data.usuario);
+      onLogin(data.token);
     } catch (err) {
       setError(
         err.response?.data?.message ||

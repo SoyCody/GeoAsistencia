@@ -9,16 +9,21 @@ const api = axios.create({
   },
 });
 
-// Interceptor para errores globales
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const url = error.config?.url;
+
+    // 👇 NO interceptar login
+    if (status === 401 && !url.includes("/auth/login")) {
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
+
     return Promise.reject(error);
   }
 );
+
 
 export default api;
