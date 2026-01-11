@@ -13,13 +13,8 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      // 🔐 Formato requerido por el backend
-      const passwordFormateada = `Password@${password}`;
-
-      const data = await authService.login(
-        codigo,
-        passwordFormateada
-      );
+      // ⚠️ NO modificar la contraseña
+      const data = await authService.login(codigo, password);
 
       localStorage.setItem("token", data.token);
       onLogin(data.usuario);

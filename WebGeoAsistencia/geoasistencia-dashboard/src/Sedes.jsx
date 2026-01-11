@@ -1,86 +1,92 @@
+import { useEffect, useState } from "react";
+import { sedeService } from "./api/sedeService";
+
 export default function Sedes() {
+  const [sedes, setSedes] = useState([]);
+  const [nombre, setNombre] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  /* =========================
+     LISTAR SEDES AL CARGAR
+  ========================= */
+  useEffect(() => {
+    cargarSedes();
+  }, []);
+
+  const cargarSedes = async () => {
+    try {
+      setLoading(true);
+      const data = await sedeService.listar();
+      setSedes(data);
+    } catch (err) {
+      setError("Error al cargar sedes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* =========================
+     CREAR SEDE
+  ========================= */
+  const crearSede = async () => {
+    if (!nombre.trim()) return;
+
+    try {
+      await sedeService.crear({ nombre });
+      setNombre("");
+      cargarSedes(); // refresca lista
+    } catch (err) {
+      setError("No se pudo crear la sede");
+    }
+  };
+
+  /* =========================
+     ELIMINAR SEDE
+  ========================= */
+  const eliminarSede = async (id) => {
+    if (!confirm("¿Eliminar sede?")) return;
+
+    try {
+      await sedeService.eliminar(id);
+      cargarSedes();
+    } catch (err) {
+      setError("No se pudo eliminar la sede");
+    }
+  };
+
   return (
-    <>
-      {/* HEADER */}
-      <div style={styles.header}>
-        <h1 style={styles.title}>Gestión de Sedes</h1>
-        <button style={styles.btnPrimary}>➕ Nueva Sede</button>
-      </div>
+    <div>
+      {/* MENSAJE DE ERROR */}
+      {error && <p>{error}</p>}
+
+      {/* CREAR SEDE */}
+      <input
+        value={nombre}
+        onChange={(e) => setNombre(e.target.value)}
+        placeholder="Nombre de la sede"
+      />
+      <button onClick={crearSede}>Crear sede</button>
 
       {/* LISTADO */}
-      <Section title="Listado de sedes">
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Nombre sede</th>
-              <th style={styles.th}>Latitud</th>
-              <th style={styles.th}>Longitud</th>
-              <th style={styles.th}>Radio</th>
-              <th style={styles.th}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={styles.td}>Loja Matriz</td>
-              <td style={styles.td}>-3.99313</td>
-              <td style={styles.td}>-79.20422</td>
-              <td style={styles.td}>100 m</td>
-              <td style={styles.td}>
-                <button style={styles.link}>Editar</button>
-                <button style={styles.linkDanger}>Eliminar</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </Section>
-
-      {/* FORMULARIO */}
-      <Section title="Crear nueva sede">
-        <div style={styles.formContainer}>
-          {/* FORM */}
-          <div style={styles.form}>
-            <input style={styles.input} placeholder="Nombre de la sede" />
-            <input style={styles.input} placeholder="Latitud" defaultValue="-3.99313" />
-            <input style={styles.input} placeholder="Longitud" defaultValue="-79.20422" />
-            <input style={styles.input} placeholder="Radio (metros)" />
-
-            <div style={styles.actions}>
-              <button style={styles.btnPrimary}>Guardar</button>
-              <button style={styles.btnSecondary}>Cancelar</button>
-            </div>
-          </div>
-
-          {/* MAPA */}
-          <div style={styles.map}>
-            <iframe
-              title="Mapa Loja"
-              width="100%"
-              height="100%"
-              style={{ border: 0, borderRadius: 8 }}
-              loading="lazy"
-              allowFullScreen
-              referrerPolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps?q=-3.99313,-79.20422&z=14&output=embed"
-            />
-          </div>
-        </div>
-      </Section>
-    </>
-  );
-}
-
-/* ===================== */
-/* COMPONENTE SECTION */
-/* ===================== */
-
-function Section({ title, children }) {
-  return (
-    <div style={styles.section}>
-      <h3 style={styles.sectionTitle}>{title}</h3>
-      {children}
+      {loading ? (
+        <p>Cargando...</p>
+      ) : (
+        <ul>
+          {sedes.map((sede) => (
+            <li key={sede.id}>
+              {sede.nombre}
+              <button onClick={() => eliminarSede(sede.id)}>
+                Eliminar
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
+
 
 /* ===================== */
 /* ESTILOS */
