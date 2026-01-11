@@ -13,11 +13,14 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      // ⚠️ NO modificar la contraseña
-      const data = await authService.login(codigo, password);
+
+      const data = await authService.login(
+        codigo,
+        password
+      );
 
       localStorage.setItem("token", data.token);
-      onLogin(data.usuario);
+      onLogin(data.token);
     } catch (err) {
       setError(
         err.response?.data?.message ||

@@ -2,9 +2,9 @@
 import api from "./axiosConfig";
 
 export const authService = {
-  login: async (codigo, password) => {
+  login: async (codigo_empleado, password) => {
     const response = await api.post("/auth/login", {
-      codigo,
+      codigo_empleado,
       password,
     });
     return response.data;
