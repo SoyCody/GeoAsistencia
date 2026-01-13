@@ -19,34 +19,36 @@ export async function insertSede(client, nombre, direccion, latitud, longitud) {
 export async function readSedes(pool) {
     const query = `
       SELECT 
-        s.id, -- Agregado: Necesitas el ID para poder hacer click en "Editar" en tu tabla
-        s.nombre AS nombre_sede,
+        s.id,
+        s.nombre,
         s.direccion,
+        s.latitud,
+        s.longitud,
         COUNT(g.id) AS cantidad_geocercas,
         COALESCE(STRING_AGG(g.nombre_zona, ', '), 'Sin geocercas asignadas') AS nombres_geocercas
       FROM sede s
       LEFT JOIN geocerca g ON s.id = g.sede_id
-      GROUP BY s.id, s.nombre
+      GROUP BY s.id, s.nombre, s.direccion, s.latitud, s.longitud
       ORDER BY s.nombre ASC;
     `;
     const result = await pool.query(query);
-    return result.rows; // Corregido: Devuelve el array de datos limpio
+    return result; // ✅ Devolver el objeto completo, no solo .rows
 }
 
 export async function readById(pool, id) {
     const query = `
     SELECT 
         s.id,
-        s.nombre AS nombre_sede,
+        s.nombre,
         s.direccion,
-        s.latitud, -- Agregado: Necesario para mostrar el mapa
-        s.longitud, -- Agregado: Necesario para mostrar el mapa
+        s.latitud,
+        s.longitud,
         COUNT(g.id) AS cantidad_geocercas,
         COALESCE(STRING_AGG(g.nombre_zona, ', '), 'Sin geocercas asignadas') AS nombres_geocercas
     FROM sede s
     LEFT JOIN geocerca g ON s.id = g.sede_id    
-    WHERE s.id = $1  -- Corregido: El WHERE va antes del GROUP BY
-    GROUP BY s.id, s.nombre; 
+    WHERE s.id = $1
+    GROUP BY s.id, s.nombre, s.direccion, s.latitud, s.longitud;
     `;
 
     const result = await pool.query(query, [id]);
@@ -75,7 +77,7 @@ export async function modifySede(client, id, nombre, direccion, latitud, longitu
         RETURNING *
     `;
     const result = await client.query(query, [id, nombre, direccion, latitud, longitud]);
-    return result.rows[0]; // Corregido: Devuelve el dato actualizado
+    return result.rows[0]; 
 };
 
 export async function borrar(client, id){

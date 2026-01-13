@@ -65,11 +65,15 @@ export const createSede = async (req, res) => {
 export const listSedes = async (req, res) => {
     try {
         const result = await readSedes(pool);
-        const sedes = result.rows;
+        console.log('Result de readSedes:', result); 
+        console.log('Rows:', result.rows); 
+        
+        const sedes = result.rows || []; 
+        
         return res.status(200).json({
-            status: 'succes',
+            status: 'success',
             sedes
-        })
+        });
     } catch (error) {
         console.log(error);
         return res.status(400).json({
@@ -102,7 +106,6 @@ export const getSedeById = async (req, res) => {
     }
 }
 
-
 export const updateSede = async (req, res) => {
     const client = await pool.connect();
     try {
@@ -110,7 +113,16 @@ export const updateSede = async (req, res) => {
         const { nombre, direccion, latitud, longitud } = validateSede(req.body);
         const idAdmin = req.user.id;
 
-        client.query('BEGIN');
+        await client.query('BEGIN'); // ✅ Agregar await
+
+        // Validar ID antes de consultar
+        if (!id) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                message: "Debe proporcionar un ID de sede válido"
+            });
+        }
+
         const sede = await verSede(client, id);
 
         if (!sede) {
@@ -125,25 +137,19 @@ export const updateSede = async (req, res) => {
             direccion: sede.direccion
         };
 
-
-        if (!id) {
+        // ✅ CORRECCIÓN: modifySede ya devuelve el objeto directamente (rows[0])
+        const sedeActualizada = await modifySede(client, id, nombre, direccion, latitud, longitud);
+        
+        if (!sedeActualizada) {
             await client.query('ROLLBACK');
-            return res.status(404).json({
-                message: "No se encontró la sede para actualizar"
-            })
-        }
-
-        const result = await modifySede(client, id, nombre, direccion, latitud, longitud);
-        if (!result) {
-            await client.query('ROLLBACK');
-            return res.status(404).json({
+            return res.status(500).json({
                 message: "No se pudo actualizar la sede"
-            })
+            });
         }
 
         const despues = {
-            nombre: result.rows[0].nombre,
-            direccion: result.rows[0].direccion
+            nombre: sedeActualizada.nombre, // ✅ Ya no necesitas .rows[0]
+            direccion: sedeActualizada.direccion
         };
 
         await auditarCambio(client, {
@@ -162,18 +168,20 @@ export const updateSede = async (req, res) => {
         return res.status(200).json({
             message: 'Sede actualizada correctamente',
             sede: {
-                nombre: despues.nombre,
-                direccion: despues.direccion
+                id: sedeActualizada.id, // ✅ Incluir ID es útil
+                nombre: sedeActualizada.nombre,
+                direccion: sedeActualizada.direccion,
+                latitud: sedeActualizada.latitud,
+                longitud: sedeActualizada.longitud
             }
         });
 
     } catch (error) {
-        console.log(error);
+        console.error('Error en updateSede:', error);
         await client.query('ROLLBACK');
-        console.error(error.message);
         return res.status(400).json({
-            message: 'Hubo un error al actualizar la sede'
-        })
+            message: error.message || 'Hubo un error al actualizar la sede'
+        });
     } finally {
         client.release();
     }

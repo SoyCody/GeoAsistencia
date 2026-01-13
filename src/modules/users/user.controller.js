@@ -1,17 +1,19 @@
 import { pool } from '../../config/db.js';
-import { 
-  me, 
-  listUsers, 
-  verAdmin, 
-  changeState, 
-  changeRole, 
+import {
+  me,
+  listUsers,
+  verAdmin,
+  changeState,
+  changeRole,
   consultStateCode,
   watchUser,
   countUsers,
-  countEveryone
+  countEveryone,
+  update
 } from './user.repository.js';
 import { auditarCambio } from '../auditoria/auditoria.service.js';
 import { AUDIT_ACTIONS, AUDIT_TABLES } from '../auditoria/auditoria.constants.js';
+import { validateUpdateUser } from './user.validator.js';
 
 export const getMe = async (req, res) => {
   const perfilId = req.user?.id;
@@ -37,42 +39,42 @@ export const getMe = async (req, res) => {
     return res.status(500).json({
       status: "error"
     });
-  } finally{
+  } finally {
     client.release();
   }
 };
 
-export const watch = async(req, res)=>{
+export const watch = async (req, res) => {
   const client = await pool.connect();
-  try{
+  try {
     const { id } = req.params;
-    if(!id){
+    if (!id) {
       return res.status(400).json({
-        message:'Debe haber el id del usaurio'
+        message: 'Debe haber el id del usaurio'
       })
     }
 
     const result = await watchUser(client, id);
 
-    if(result.rows.length === 0){
+    if (result.rows.length === 0) {
 
       return res.status(404).json({
-        status:'error',
-        message:'No se ha encontrado ningun usuario'
+        status: 'error',
+        message: 'No se ha encontrado ningun usuario'
       })
     }
 
     return res.status(200).json({
-      status:'success',
+      status: 'success',
       data: result.rows[0]
     })
 
-  } catch(error){
+  } catch (error) {
     console.log(error);
     return res.status(400).json({
-      status:'error'
+      status: 'error'
     })
-  } finally{
+  } finally {
     client.release();
   }
 }
@@ -149,11 +151,11 @@ export const assignAdmin = async (req, res) => {
       adminPerfilId: req.user.id,
       tabla: AUDIT_TABLES.PERFIL,
       accion: AUDIT_ACTIONS.ROLE_CHANGE,
-      detalle:{
+      detalle: {
         codigoEmpleado: usuario.rows[0].codigo_empleado,
-        cambio:{
-          antes:{ es_admin: antes},
-          despues:{ es_admin: despues}
+        cambio: {
+          antes: { es_admin: antes },
+          despues: { es_admin: despues }
         }
       }
     });
@@ -218,11 +220,11 @@ export const revokeAdmin = async (req, res) => {
       adminPerfilId: req.user.id,
       tabla: AUDIT_TABLES.PERFIL,
       accion: AUDIT_ACTIONS.ROLE_CHANGE,
-      detalle:{
+      detalle: {
         codigoEmpleado: usuario.rows[0].codigo_empleado,
         cambio: {
-          antes:{ es_admin: antes},
-          despues:{ es_admin: despues}
+          antes: { es_admin: antes },
+          despues: { es_admin: despues }
         }
       }
     })
@@ -336,17 +338,17 @@ const alterState = (estado) => async (req, res) => {
 export const deleteUser = alterState('BORRADO');
 export const suspendUser = alterState('SUSPENDIDO');
 
-const countByState =(estado) => async(req, res) => {
-  try{
+const countByState = (estado) => async (req, res) => {
+  try {
     const conteo = await countUsers(pool, estado);
-     return res.status(200).json({
-      status:'succes',
+    return res.status(200).json({
+      status: 'succes',
       count: conteo
-     })
-  }catch(error){
+    })
+  } catch (error) {
     console.log(error);
     return res.status(400).json({
-      message:'Error al contar usuarios'
+      message: 'Error al contar usuarios'
     })
   }
 };
@@ -355,17 +357,91 @@ export const actives = countByState('ACTIVO');
 export const suspended = countByState('SUSPENDIDO');
 export const deleted = countByState('BORRADO');
 
-export const countTotal = async (req, res)=>{
-  try{
-      const total = await countEveryone(pool);
-      return res.status(200).json({
-        status:'success',
-        count: total
-      })
-  }catch(error){
+export const countTotal = async (req, res) => {
+  try {
+    const total = await countEveryone(pool);
+    return res.status(200).json({
+      status: 'success',
+      count: total
+    })
+  } catch (error) {
     console.log(error);
     return res.status(400).json({
-      state:'error'
+      state: 'error'
     })
+  }
+}
+
+export const updateUser = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    const { email, telefono, cargo } = validateUpdateUser(req.body);
+    const idAdmin = req.user.id;
+
+    await client.query('BEGIN');
+
+    const beforeResult = await client.query(
+      `
+        SELECT 
+          p.email,
+          p.telefono,
+          pf.cargo
+        FROM perfil pf
+        INNER JOIN persona p ON p.id = pf.persona_id
+        WHERE pf.id = $1
+      `,[id]
+    );
+
+    if (beforeResult.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        message: 'No se ha encontrado ningun usuario'
+      });
+    }
+
+    const result = await update(client, email, telefono, cargo, id);
+
+    if (result.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        message: 'No se ha encontrado ningun usuario'
+      })
+    }
+
+    await auditarCambio(client, {
+      adminPerfilId: idAdmin,
+      tabla: AUDIT_TABLES.PERFIL,
+      accion: AUDIT_ACTIONS.UPDATE,
+      detalle: {
+        antes: beforeResult.rows[0],
+        despues: {
+          email,
+          telefono,
+          cargo
+        }
+      }
+    });
+
+
+    await client.query('COMMIT');
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        email: email,
+        telefono: telefono,
+        cargo: cargo
+      }
+    })
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Error interno'
+    })
+  } finally {
+    client.release();
   }
 }

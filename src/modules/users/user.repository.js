@@ -128,3 +128,32 @@ export async function countEveryone(pool){
   const result = await pool.query(query);
   return Number(result.rows[0].total);
 }
+
+export async function update(client, email, telefono, cargo, id) {
+  const query = `
+    WITH perfil_update AS (
+      UPDATE perfil
+      SET cargo = $3,
+          updated_at = NOW()
+      WHERE id = $4
+      RETURNING persona_id, cargo
+    ),
+    persona_update AS (
+      UPDATE persona
+      SET email = $1, 
+          telefono = $2,
+          updated_at = NOW()
+      WHERE id = (SELECT persona_id FROM perfil_update)
+      RETURNING email, telefono
+    )
+    SELECT 
+      pu.cargo,
+      pe.email, 
+      pe.telefono
+    FROM perfil_update pu
+    JOIN persona_update pe ON true
+  `;
+
+  const result = await client.query(query, [email, telefono, cargo, id]);
+  return result;
+}

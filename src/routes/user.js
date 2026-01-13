@@ -11,7 +11,9 @@ import  {
     actives,
     suspended,
     deleted,
-    countTotal
+    countTotal,
+    watch,
+    updateUser
 } from '../modules/users/user.controller.js';
 import { auth, isAdmin } from '../middlewares/auth.middleware.js';
 
@@ -28,7 +30,9 @@ router.get('/me', auth, getMe);
 router.get('/list/active', auth, isAdmin, listActives);
 router.get('/list/suspended', auth, isAdmin, listSuspended);
 router.get('/list/deleted', auth, isAdmin, listDeleted);
+router.get('/watch/:id', auth, isAdmin, watch);
 router.put('/delete/:id', auth, isAdmin, deleteUser);
+router.put('/update/:id', auth, isAdmin, updateUser)
 router.put('/suspend/:id', auth, isAdmin, suspendUser);
 
 router.get('/actives', auth, isAdmin, actives);
