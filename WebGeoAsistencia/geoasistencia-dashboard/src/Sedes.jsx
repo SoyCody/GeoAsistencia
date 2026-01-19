@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
 import sedeService from "./api/sedeService.js";
+import MapaSedeModal from './components/MapaSedeModal';
 
 export default function Sedes() {
   // Estados
   const [sedes, setSedes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [mensaje, setMensaje] = useState({ texto: '', tipo: '' }); // 'success' | 'error'
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [sedeEditando, setSedeEditando] = useState(null);
+
+  // Estados para modales
+  const [mostrarModalMapa, setMostrarModalMapa] = useState(false);
+  const [sedeSeleccionada, setSedeSeleccionada] = useState(null);
 
   // Estado del formulario
   const [formData, setFormData] = useState({
@@ -26,26 +31,34 @@ export default function Sedes() {
   }, []);
 
   /* =========================
+     MOSTRAR MENSAJE TEMPORAL
+  ========================= */
+  const mostrarMensaje = (texto, tipo) => {
+    setMensaje({ texto, tipo });
+    setTimeout(() => setMensaje({ texto: '', tipo: '' }), 4000);
+  };
+
+  /* =========================
      LISTAR SEDES
   ========================= */
   const cargarSedes = async () => {
     try {
       setLoading(true);
-      setError(null);
+      setMensaje({ texto: '', tipo: '' });
       const response = await sedeService.listar();
-      
+
       console.log('Respuesta de sedes:', response);
-      
+
       // El backend devuelve { status: 'success', sedes: [...] }
       if (response && response.sedes && Array.isArray(response.sedes)) {
         setSedes(response.sedes);
       } else {
         setSedes([]);
-        setError('La respuesta del servidor no tiene el formato esperado');
+        mostrarMensaje('La respuesta del servidor no tiene el formato esperado', 'error');
       }
     } catch (err) {
       console.error("Error al cargar sedes:", err);
-      setError(err.response?.data?.message || "Error al cargar sedes");
+      mostrarMensaje(err.response?.data?.message || "Error al cargar sedes", 'error');
       setSedes([]);
     } finally {
       setLoading(false);
@@ -71,7 +84,7 @@ export default function Sedes() {
 
     try {
       setLoading(true);
-      setError(null);
+      setMensaje({ texto: '', tipo: '' });
 
       const dataToSend = {
         nombre: formData.nombre,
@@ -83,7 +96,7 @@ export default function Sedes() {
       const response = await sedeService.crear(dataToSend);
       console.log("Sede creada:", response);
 
-      alert("Sede creada exitosamente");
+      mostrarMensaje('✓ Sede creada exitosamente', 'success');
 
       // Limpiar formulario
       setFormData({
@@ -99,8 +112,7 @@ export default function Sedes() {
       cargarSedes();
     } catch (err) {
       console.error("Error al crear:", err);
-      setError(err.response?.data?.message || "Error al crear sede");
-      alert(err.response?.data?.message || "Error al crear sede");
+      mostrarMensaje(err.response?.data?.message || "Error al crear sede", 'error');
     } finally {
       setLoading(false);
     }
@@ -109,49 +121,40 @@ export default function Sedes() {
   /* =========================
    EDITAR SEDE
 ========================= */
-const handleEditar = async (sede) => {
-  try {
-    setLoading(true);
+  const handleEditar = async (sede) => {
+    try {
+      setLoading(true);
 
-    console.log('Sede a editar:', sede); 
+      console.log('Sede a editar:', sede);
 
-    // Cargar datos completos de la sede
-    const response = await sedeService.obtenerPorId(sede.id);
-    console.log("Respuesta completa:", response); 
-    console.log("Sede obtenida:", response.sede); 
+      // Cargar datos completos de la sede
+      const response = await sedeService.obtenerPorId(sede.id);
+      console.log("Respuesta completa:", response);
+      console.log("Sede obtenida:", response.sede);
 
-    const sedeCompleta = response.sede;
+      const sedeCompleta = response.sede;
 
-    if (!sedeCompleta) {
-      throw new Error("No se pudo obtener la sede");
+      if (!sedeCompleta) {
+        throw new Error("No se pudo obtener la sede");
+      }
+
+      setFormData({
+        nombre: sedeCompleta.nombre || "",
+        direccion: sedeCompleta.direccion || "",
+        latitud: sedeCompleta.latitud || "",
+        longitud: sedeCompleta.longitud || "",
+      });
+
+      setSedeEditando(sedeCompleta);
+      setModoEdicion(true);
+      setMostrarFormulario(true);
+    } catch (err) {
+      console.error("Error al editar:", err);
+      mostrarMensaje('Error al cargar los datos de la sede', 'error');
+    } finally {
+      setLoading(false);
     }
-
-    console.log('Campos de la sede:', {
-      nombre: sedeCompleta.nombre,
-      nombre_sede: sedeCompleta.nombre_sede, // Por si tiene alias
-      direccion: sedeCompleta.direccion,
-      latitud: sedeCompleta.latitud,
-      longitud: sedeCompleta.longitud
-    });
-
-    setFormData({
-      nombre: sedeCompleta.nombre || sedeCompleta.nombre_sede || "",
-      direccion: sedeCompleta.direccion || "",
-      latitud: sedeCompleta.latitud || "",
-      longitud: sedeCompleta.longitud || "",
-    });
-
-    setSedeEditando(sedeCompleta);
-    setModoEdicion(true);
-    setMostrarFormulario(true);
-  } catch (err) {
-    console.error("Error al editar:", err);
-    setError(err.response?.data?.message || "Error al cargar sede");
-    alert("Error al cargar los datos de la sede");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
   /* =========================
      ACTUALIZAR SEDE
   ========================= */
@@ -162,7 +165,7 @@ const handleEditar = async (sede) => {
 
     try {
       setLoading(true);
-      setError(null);
+      setMensaje({ texto: '', tipo: '' });
 
       const dataToSend = {
         nombre: formData.nombre,
@@ -174,14 +177,13 @@ const handleEditar = async (sede) => {
       const response = await sedeService.update(sedeEditando.id, dataToSend);
       console.log("Sede actualizada:", response);
 
-      alert("Sede actualizada exitosamente");
+      mostrarMensaje('Sede actualizada exitosamente', 'success');
       cancelarEdicion();
 
       cargarSedes();
     } catch (err) {
       console.error("Error al actualizar:", err);
-      setError(err.response?.data?.message || "Error al actualizar sede");
-      alert(err.response?.data?.message || "Error al actualizar sede");
+      mostrarMensaje(err.response?.data?.message || "Error al actualizar sede", 'error');
     } finally {
       setLoading(false);
     }
@@ -190,26 +192,25 @@ const handleEditar = async (sede) => {
   /* =========================
      ELIMINAR SEDE
   ========================= */
-  const handleEliminar = async (id) => {
-    if (!window.confirm("¿Está seguro de eliminar esta sede?")) {
+  const handleEliminar = async (id, nombreSede) => {
+    if (!window.confirm(`¿Está seguro de eliminar la sede "${nombreSede}"? Esta acción no se puede deshacer.`)) {
       return;
     }
 
     try {
       setLoading(true);
-      setError(null);
+      setMensaje({ texto: '', tipo: '' });
 
       const response = await sedeService.eliminar(id);
       console.log("Sede eliminada:", response);
 
-      alert("Sede eliminada exitosamente");
+      mostrarMensaje('Sede eliminada exitosamente', 'success');
 
       // Recargar lista
       cargarSedes();
     } catch (err) {
       console.error("Error al eliminar:", err);
-      setError(err.response?.data?.message || "Error al eliminar sede");
-      alert(err.response?.data?.message || "Error al eliminar sede");
+      mostrarMensaje(err.response?.data?.message || "Error al eliminar sede", 'error');
     } finally {
       setLoading(false);
     }
@@ -246,6 +247,19 @@ const handleEditar = async (sede) => {
   };
 
   /* =========================
+     MODALES
+  ========================= */
+  const abrirModalMapa = (sede) => {
+    setSedeSeleccionada(sede);
+    setMostrarModalMapa(true);
+  };
+
+  const cerrarModalMapa = () => {
+    setMostrarModalMapa(false);
+    setSedeSeleccionada(null);
+  };
+
+  /* =========================
      URL DEL MAPA
   ========================= */
   const getMapUrl = () => {
@@ -270,17 +284,14 @@ const handleEditar = async (sede) => {
           onClick={abrirFormularioNuevo}
           disabled={loading}
         >
-        Nueva Sede
+          Nueva Sede
         </button>
       </div>
 
-      {/* MENSAJES DE ERROR */}
-      {error && (
-        <div style={styles.errorCard}>
-          <p style={styles.errorText}>{error}</p>
-          <button onClick={() => setError(null)} style={styles.closeError}>
-            ✕
-          </button>
+      {/* MENSAJES DE FEEDBACK */}
+      {mensaje.texto && (
+        <div style={mensaje.tipo === 'success' ? styles.messageSuccess : styles.messageError}>
+          {mensaje.texto}
         </div>
       )}
 
@@ -288,12 +299,17 @@ const handleEditar = async (sede) => {
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}>Listado de Sedes</h3>
 
-        {loading && <p>Cargando sedes...</p>}
+        {loading && <p>Cargando ...</p>}
 
         {!loading && sedes.length === 0 && (
-          <p style={styles.emptyText}>
-            No hay sedes registradas. Cree una nueva sede.
-          </p>
+          <div style={styles.emptyState}>
+            <p style={styles.emptyText}>
+              No hay sedes registradas
+            </p>
+            <p style={styles.emptySubtext}>
+              Cree una nueva sede para comenzar
+            </p>
+          </div>
         )}
 
         {!loading && sedes.length > 0 && (
@@ -301,39 +317,68 @@ const handleEditar = async (sede) => {
             <table style={styles.table}>
               <thead>
                 <tr>
-                  <th style={styles.th}>ID</th>
                   <th style={styles.th}>Nombre</th>
                   <th style={styles.th}>Dirección</th>
-                  <th style={styles.th}>Latitud</th>
-                  <th style={styles.th}>Longitud</th>
+                  <th style={styles.th}>Geocercas</th>
+                  <th style={styles.th}>Usuarios</th>
                   <th style={styles.th}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {sedes.map((sede) => (
                   <tr key={sede.id}>
-                    <td style={styles.td} title={sede.id}>
-                      {sede.id ? sede.id.substring(0, 8) + "..." : "N/A"}
-                    </td>
                     <td style={styles.td}>{sede.nombre || "N/A"}</td>
                     <td style={styles.td}>{sede.direccion || "N/A"}</td>
-                    <td style={styles.td}>{sede.latitud || "N/A"}</td>
-                    <td style={styles.td}>{sede.longitud || "N/A"}</td>
+
+                    {/* Geocercas */}
                     <td style={styles.td}>
-                      <button
-                        style={styles.link}
-                        onClick={() => handleEditar(sede)}
-                        disabled={loading}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        style={styles.linkDanger}
-                        onClick={() => handleEliminar(sede.id)}
-                        disabled={loading}
-                      >
-                        Eliminar
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontWeight: '600', color: '#1f2937' }}>
+                          {sede.cantidad_geocercas || 0}
+                        </span>
+                        <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                          {sede.cantidad_geocercas === 1 ? 'zona' : 'zonas'}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Usuarios */}
+                    <td style={styles.td}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontWeight: '600', color: '#1f2937' }}>
+                          {sede.total_usuarios || 0}
+                        </span>
+                        <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                          {sede.total_usuarios === 1 ? 'usuario' : 'usuarios'}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Acciones */}
+                    <td style={styles.td}>
+                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                        <button
+                          style={styles.linkMap}
+                          onClick={() => abrirModalMapa(sede)}
+                          disabled={loading}
+                        >
+                          Ver mapa
+                        </button>
+                        <button
+                          style={styles.link}
+                          onClick={() => handleEditar(sede)}
+                          disabled={loading}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          style={styles.linkDanger}
+                          onClick={() => handleEliminar(sede.id, sede.nombre)}
+                          disabled={loading}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -412,8 +457,8 @@ const handleEditar = async (sede) => {
                 {loading
                   ? "Guardando..."
                   : modoEdicion
-                  ? "Actualizar"
-                  : "Guardar"}
+                    ? "Actualizar"
+                    : "Guardar"}
               </button>
               <button
                 type="button"
@@ -426,6 +471,14 @@ const handleEditar = async (sede) => {
             </div>
           </form>
         </div>
+      )}
+
+      {/* MODALES */}
+      {mostrarModalMapa && sedeSeleccionada && (
+        <MapaSedeModal
+          sede={sedeSeleccionada}
+          onClose={cerrarModalMapa}
+        />
       )}
     </div>
   );
@@ -476,37 +529,44 @@ const styles = {
     fontSize: 18,
     fontWeight: 600,
     marginBottom: 16,
+    color: "#000f"
   },
 
-  errorCard: {
+  messageSuccess: {
+    padding: "12px 20px",
+    marginBottom: "20px",
+    borderRadius: "8px",
+    background: "#d1fae5",
+    color: "#065f46",
+    border: "1px solid #6ee7b7",
+    fontWeight: "500",
+  },
+
+  messageError: {
+    padding: "12px 20px",
+    marginBottom: "20px",
+    borderRadius: "8px",
     background: "#fee2e2",
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 24,
-    border: "1px solid #fecaca",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
+    color: "#991b1b",
+    border: "1px solid #fca5a5",
+    fontWeight: "500",
   },
 
-  errorText: {
-    color: "#dc2626",
-    margin: 0,
-  },
-
-  closeError: {
-    background: "none",
-    border: "none",
-    color: "#dc2626",
-    fontSize: 18,
-    cursor: "pointer",
-    fontWeight: "bold",
+  emptyState: {
+    textAlign: "center",
+    padding: "40px 20px",
   },
 
   emptyText: {
-    color: "#64748b",
-    textAlign: "center",
-    padding: "20px 0",
+    color: "#475569",
+    fontSize: 16,
+    margin: "0 0 8px 0",
+  },
+
+  emptySubtext: {
+    color: "#94a3b8",
+    fontSize: 14,
+    margin: 0,
   },
 
   table: {
@@ -545,6 +605,15 @@ const styles = {
     textDecoration: "underline",
   },
 
+  linkMap: {
+    background: "none",
+    border: "none",
+    color: "#0891b2",
+    cursor: "pointer",
+    textDecoration: "underline",
+    marginRight: 12,
+  },
+
   formContainer: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -560,10 +629,12 @@ const styles = {
 
   input: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 8,
     border: "1px solid #d1d5db",
     fontSize: 14,
     width: "100%",
+    background: "#ffffff",
+    color: "#000f"
   },
 
   actions: {
@@ -581,14 +652,15 @@ const styles = {
   },
 
   btnPrimary: {
-    backgroundColor: "#2563eb",
-    color: "#fff",
-    border: "none",
-    padding: "12px 20px",
+    padding: "10px 18px",
     borderRadius: 10,
+    border: "1px solid #c0c0c0ff",
+    background: "#ffffff",
+    color: "#475569",
     cursor: "pointer",
     fontSize: 14,
-    fontWeight: 500,
+    fontWeight: "500",
+    transition: "all 0.2s"
   },
 
   btnSecondary: {

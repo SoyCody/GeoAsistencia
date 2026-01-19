@@ -12,7 +12,7 @@ export async function checkDuplicate(client, sede_id, nombre_zona) {
         WHERE sede_id = $1 
         AND LOWER(nombre_zona) = LOWER($2)
     `;
-    const result = await client.query(query, [sede_id, nombre_zona]); 
+    const result = await client.query(query, [sede_id, nombre_zona]);
     return result.rowCount > 0;
 };
 
@@ -34,7 +34,7 @@ export async function insertGeocerca(client, sede_id, nombre_zona, radio_metros,
     return result.rows[0];
 };
 
-export async function verGeocerca(client, id){
+export async function verGeocerca(client, id) {
     const query = `
         SELECT
             id, sede_id, nombre_zona, radio_metros,
@@ -72,7 +72,7 @@ export async function removeGeocerca(client, id) {
     return result.rows[0];
 };
 
-export async function readGeocerca(pool, sede_id){
+export async function readGeocerca(pool, sede_id) {
     const query = `
         SELECT 
             id, -- Necesitas el ID para poder editar/borrar en el front
@@ -85,10 +85,10 @@ export async function readGeocerca(pool, sede_id){
         ORDER BY nombre_zona ASC
     `;
     const result = await pool.query(query, [sede_id]);
-    return result.rows; 
+    return result.rows;
 };
 
-export async function readGeocercaById(pool, id){
+export async function readGeocercaById(pool, id) {
     const query = `
         SELECT 
             id,
@@ -105,7 +105,7 @@ export async function readGeocercaById(pool, id){
 };
 
 export async function listar(pool, geocerca_id) {
-  const query = `
+    const query = `
     SELECT DISTINCT
       s.nombre AS nombre_sede,
       pf.codigo_empleado,
@@ -119,6 +119,29 @@ export async function listar(pool, geocerca_id) {
     ORDER BY pf.codigo_empleado;
   `;
 
-  const result = await pool.query(query, [geocerca_id]);
-  return result.rows;
+    const result = await pool.query(query, [geocerca_id]);
+    return result.rows;
+}
+
+// Nueva función para listar TODAS las geocercas con nombre de sede
+export async function readAllGeocercas(pool) {
+    const query = `
+    SELECT 
+      g.id,
+      g.sede_id,
+      g.nombre_zona,
+      g.radio_metros,
+      ST_Y(g.punto_central::geometry) AS latitud,
+      ST_X(g.punto_central::geometry) AS longitud,
+      s.nombre AS sede_nombre,
+      COUNT(DISTINCT CASE WHEN pf.estado = 'ACTIVO' THEN al.perfil_id END) AS usuarios_count
+    FROM geocerca g
+    INNER JOIN sede s ON g.sede_id = s.id
+    LEFT JOIN asignacion_laboral al ON g.id = al.geocerca_id
+    LEFT JOIN perfil pf ON al.perfil_id = pf.id
+    GROUP BY g.id, s.nombre
+    ORDER BY s.nombre, g.nombre_zona ASC
+  `;
+    const result = await pool.query(query);
+    return result.rows;
 }

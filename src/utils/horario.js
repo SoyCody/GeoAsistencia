@@ -1,5 +1,7 @@
+import validator from 'validator';
+
 export function validateHorario(hora_entrada, hora_salida) {
-    
+
     const entrada = (hora_entrada || '').toString().trim();
     const salida = (hora_salida || '').toString().trim();
 
@@ -24,7 +26,7 @@ export function validateHorario(hora_entrada, hora_salida) {
 
     // Al ser formato HH:MM (24h), podemos compararlos directamente como strings
     // Ejemplo: "08:00" < "17:00" es TRUE.
-    
+
     if (entrada >= salida) {
         throw new Error("La hora de salida debe ser posterior a la hora de entrada.");
     }

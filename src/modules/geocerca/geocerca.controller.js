@@ -1,15 +1,16 @@
 import { pool } from "../../config/db.js";
 import { validateGeo, validateUpd } from "./geocerca.validator.js";
-import { 
-    checkDuplicate, 
-    insertGeocerca, 
-    checkSedeExists, 
-    verGeocerca, 
+import {
+    checkDuplicate,
+    insertGeocerca,
+    checkSedeExists,
+    verGeocerca,
     alterGeocerca,
     removeGeocerca,
     readGeocerca,
     readGeocercaById,
-    listar
+    listar,
+    readAllGeocercas
 } from "./geocerca.repository.js";
 import { auditarCambio } from "../auditoria/auditoria.service.js";
 import { AUDIT_TABLES, AUDIT_ACTIONS } from "../auditoria/auditoria.constants.js";
@@ -25,7 +26,7 @@ export const createGeocerca = async (req, res) => {
         if (!existeSede) {
             await client.query(`ROLLBACK`);
             return res.status(404).json({
-                message:'La sede no existe'
+                message: 'La sede no existe'
             })
         }
 
@@ -38,11 +39,11 @@ export const createGeocerca = async (req, res) => {
         }
 
         const result = await insertGeocerca(
-            client, 
-            sede_id, 
-            nombre_zona, 
-            radio_metros, 
-            latitud, 
+            client,
+            sede_id,
+            nombre_zona,
+            radio_metros,
+            latitud,
             longitud
         )
 
@@ -95,13 +96,13 @@ export const updateGeocerca = async (req, res) => {
         const { id } = req.params;
         const { nombre_zona, latitud, longitud, radio_metros } = await validateUpd(req.body);
 
-        if(!id){
+        if (!id) {
             await client.query('ROLLBACK');
             return res.status(400).json({
                 message: 'Debe ingresar el id de la geocerca'
             })
         }
-        
+
         const antes = await verGeocerca(client, id);
 
         if (!antes) {
@@ -112,18 +113,18 @@ export const updateGeocerca = async (req, res) => {
         }
 
         const result = await alterGeocerca(
-            client, 
-            id, 
-            nombre_zona, 
-            radio_metros, 
-            latitud, 
+            client,
+            id,
+            nombre_zona,
+            radio_metros,
+            latitud,
             longitud
         );
 
         if (!result) {
             await client.query('ROLLBACK');
             return res.status(500).json({
-                message:'Error al alterar campos'
+                message: 'Error al alterar campos'
             })
         }
 
@@ -136,7 +137,7 @@ export const updateGeocerca = async (req, res) => {
                     nombre_zona: antes.nombre_zona,
                     radio_metros: antes.radio_metros
                 },
-                despues:{
+                despues: {
                     nombre_zona: result.nombre_zona,
                     radio_metros: result.radio_metros
                 }
@@ -172,7 +173,7 @@ export const deleteGeocerca = async (req, res) => {
         await client.query('BEGIN');
         const geocerca = await verGeocerca(client, id);
 
-        if(!geocerca){
+        if (!geocerca) {
             await client.query('ROLLBACK');
             return res.status(404).json({
                 message: 'La geocerca no existe'
@@ -181,7 +182,7 @@ export const deleteGeocerca = async (req, res) => {
 
         const result = await removeGeocerca(client, id);
 
-        if(!result){
+        if (!result) {
             await client.query('ROLLBACK');
             return res.status(500).json({
                 message: 'Error al eliminar la geocerca'
@@ -222,29 +223,29 @@ export const listGeocercas = async (req, res) => {
     try {
         const { id } = req.params;
 
-        if(!id){
+        if (!id) {
             return res.status(400).json({
-                message:'Debe ingresar el id'
+                message: 'Debe ingresar el id'
             })
         }
 
-        const result =await readGeocerca (pool, id);
-        if(!result){
+        const result = await readGeocerca(pool, id);
+        if (!result) {
             console.log(error);
             return res.status(404).json({
-                message:'No se ha encontrado geocercas de esa sede'
+                message: 'No se ha encontrado geocercas de esa sede'
             })
         }
 
         return res.status(200).json({
-            status:'success',
+            status: 'success',
             geocercas: result
         })
 
     } catch (error) {
         console.log(error);
         console.error(error.message);
-        return res.staatus(500).json({
+        return res.status(500).json({
             message: 'Error interno'
         })
     }
@@ -252,61 +253,87 @@ export const listGeocercas = async (req, res) => {
 
 export const listGeocercaById = async (req, res) => {
     try {
-        const {id} = req.params;
+        const { id } = req.params;
 
-        if(!id){
+        if (!id) {
             return res.status(400).json({
-                message:'Debe ingresar el id'
+                message: 'Debe ingresar el id'
             })
         }
 
-        const result =await readGeocercaById (pool, id);
-        if(!result){
+        const result = await readGeocercaById(pool, id);
+        if (!result) {
             console.log(error);
             return res.status(404).json({
-                message:'No se ha encontrado ninguna geocerca'
+                message: 'No se ha encontrado ninguna geocerca'
             })
         }
 
         return res.status(200).json({
-            status:'success',
+            status: 'success',
             geocerca: result
         })
     } catch (error) {
         console.log(error);
-        return res.staatus(400).json({
+        return res.status(400).json({
             message: 'Error interno'
         })
     }
-};   
+};
 
 export const listUsersByGeocerca = async (req, res) => {
-  const { id } = req.params;
+    const { id } = req.params;
 
-  try {
-    if (!id) {
-      return res.status(400).json({
-        message: 'Debe ingresar el id de la geocerca'
-      });
+    try {
+        if (!id) {
+            return res.status(400).json({
+                message: 'Debe ingresar el id de la geocerca'
+            });
+        }
+
+        const users = await listar(pool, id);
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                message: 'No se encontraron usuarios para esta geocerca'
+            });
+        }
+
+        return res.status(200).json({
+            status: 'success',
+            data: users
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            message: 'Error en el servidor'
+        });
     }
+};
 
-    const users = await listar(pool, id);
+// Nueva función para listar TODAS las geocercas con nombre de sede
+export const listAllGeocercas = async (req, res) => {
+    try {
+        const result = await readAllGeocercas(pool);
 
-    if (users.length === 0) {
-      return res.status(404).json({
-        message: 'No se encontraron usuarios para esta geocerca'
-      });
+        if (!result || result.length === 0) {
+            return res.status(200).json({
+                status: 'success',
+                message: 'No se encontraron geocercas',
+                geocercas: []
+            });
+        }
+
+        return res.status(200).json({
+            status: 'success',
+            geocercas: result
+        });
+
+    } catch (error) {
+        console.error('Error al listar todas las geocercas:', error);
+        return res.status(500).json({
+            message: 'Error interno al listar geocercas'
+        });
     }
-
-    return res.status(200).json({
-      status: 'success',
-      data: users
-    });
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      message: 'Error en el servidor'
-    });
-  }
 };

@@ -9,8 +9,9 @@ import userRoutes from './routes/user.js';
 import cookieParser from 'cookie-parser';
 import sedeRoutes from './routes/sede.js';
 import geocercaRoutes from './routes/geocerca.js';
-import assignRoutes  from './routes/asignacion.js';
+import assignRoutes from './routes/asignacion.js';
 import registroRoutes from './routes/registro.js';
+import auditoriaRoutes from './routes/auditoria.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -23,8 +24,8 @@ app.use(helmet());
 app.use(morgan('dev'));
 
 app.use(cors({
-    origin:'http://localhost:5173', 
-    credentials:true
+    origin: 'http://localhost:5173',
+    credentials: true
 }));
 const PORT = 3000;
 
@@ -36,10 +37,11 @@ app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/sede', sedeRoutes);
 app.use('/geocerca', geocercaRoutes)
-app.use('/assign', assignRoutes);
-app.use('/registro', registroRoutes)
+app.use('/asignacion', assignRoutes);
+app.use('/registro', registroRoutes);
+app.use('/auditoria', auditoriaRoutes);
 
-app.listen(PORT, async ()=>{
+app.listen(PORT, async () => {
     console.log('Servidor corriendo en puerto', PORT),
-    console.log(await verificarConexionBD());
+        console.log(await verificarConexionBD());
 })

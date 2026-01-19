@@ -94,7 +94,7 @@ const listUsersByState = (estado) => async (req, res) => {
     return res.status(200).json({
       status: "success",
       count: result.rows.length,
-      data: result.rows
+      usuarios: result.rows
     });
 
   } catch (error) {
@@ -390,7 +390,7 @@ export const updateUser = async (req, res) => {
         FROM perfil pf
         INNER JOIN persona p ON p.id = pf.persona_id
         WHERE pf.id = $1
-      `,[id]
+      `, [id]
     );
 
     if (beforeResult.rowCount === 0) {

@@ -1,7 +1,7 @@
-import { pool } from '../../config/db.js'; 
-import { assign, watchAssign, existsAssign, removeAssign } from './assign.repository.js';
+import { pool } from '../../config/db.js';
+import { assign, watchAssign, existsAssign, removeAssign, getUsersByGeocerca, getAvailableUsersForGeocerca } from './assign.repository.js';
 import { auditarCambio } from '../auditoria/auditoria.service.js';
-import { AUDIT_ACTIONS, AUDIT_TABLES } from '../auditoria/auditoria.constants.js'; 
+import { AUDIT_ACTIONS, AUDIT_TABLES } from '../auditoria/auditoria.constants.js';
 import { validateHorario } from '../../utils/horario.js';
 
 export const assignWorker = async (req, res) => {
@@ -13,7 +13,7 @@ export const assignWorker = async (req, res) => {
 
         const { perfilId, geocercaId, hora_entrada, hora_salida } = req.body;
 
-        if (!perfilId ) {
+        if (!perfilId) {
             await client.query('ROLLBACK');
             return res.status(400).json({
                 message: 'El id del perfil esobligatorio'
@@ -84,7 +84,7 @@ export const changeAssign = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const { perfilId, geocercaAnteriorId, geocercaNuevaId, hora_entrada, hora_salida} = req.body;
+        const { perfilId, geocercaAnteriorId, geocercaNuevaId, hora_entrada, hora_salida } = req.body;
 
         if (!perfilId) {
             await client.query('ROLLBACK');
@@ -148,6 +148,118 @@ export const changeAssign = async (req, res) => {
     } catch (error) {
         await client.query('ROLLBACK');
         console.error(error);
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    } finally {
+        client.release();
+    }
+};
+
+// Listar usuarios asignados a una geocerca
+export const listUsuariosGeocerca = async (req, res) => {
+    try {
+        const { geocercaId } = req.params;
+
+        console.log('🔍 Listando usuarios para geocerca:', geocercaId);
+
+        if (!geocercaId) {
+            return res.status(400).json({
+                message: 'ID de geocerca requerido'
+            });
+        }
+
+        const usuarios = await getUsersByGeocerca(pool, geocercaId);
+
+        console.log('✅ Usuarios encontrados:', usuarios.length);
+        console.log('Usuarios:', JSON.stringify(usuarios, null, 2));
+
+        return res.status(200).json({
+            status: 'success',
+            usuarios
+        });
+    } catch (error) {
+        console.error('❌ Error al listar usuarios de geocerca:', error);
+        return res.status(500).json({
+            message: 'Error interno del servidor',
+            error: error.message
+        });
+    }
+};
+
+// Listar usuarios disponibles para asignar
+export const listUsuariosDisponibles = async (req, res) => {
+    try {
+        const { geocercaId } = req.params;
+        const { sedeId } = req.query;
+
+        if (!geocercaId || !sedeId) {
+            return res.status(400).json({
+                message: 'ID de geocerca y sede requeridos'
+            });
+        }
+
+        const usuarios = await getAvailableUsersForGeocerca(pool, geocercaId, sedeId);
+
+        return res.status(200).json({
+            status: 'success',
+            usuarios
+        });
+    } catch (error) {
+        console.error('Error al listar usuarios disponibles:', error);
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+};
+
+// Remover usuario de geocerca
+export const removeAssignment = async (req, res) => {
+    const client = await pool.connect();
+    const idAdmin = req.user.id;
+
+    try {
+        await client.query('BEGIN');
+
+        const { perfilId, geocercaId } = req.params;
+
+        if (!perfilId || !geocercaId) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                message: 'ID de perfil y geocerca requeridos'
+            });
+        }
+
+        const exists = await existsAssign(client, perfilId, geocercaId);
+        if (!exists) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({
+                message: 'La asignación no existe'
+            });
+        }
+
+        await removeAssign(client, perfilId, geocercaId);
+
+        await auditarCambio(client, {
+            adminPerfilId: idAdmin,
+            tabla: AUDIT_TABLES.ASIGNACION_LABORAL,
+            accion: AUDIT_ACTIONS.DELETE,
+            detalle: {
+                perfilId,
+                geocercaId
+            }
+        });
+
+        await client.query('COMMIT');
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Usuario removido de la geocerca exitosamente'
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error al remover asignación:', error);
         return res.status(500).json({
             message: 'Error interno del servidor'
         });

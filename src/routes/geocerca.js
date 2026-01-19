@@ -1,20 +1,22 @@
 import { Router } from 'express';
 import { auth, isAdmin } from '../middlewares/auth.middleware.js';
-import { 
-    createGeocerca, 
-    updateGeocerca, 
-    deleteGeocerca, 
-    listGeocercas, 
+import {
+    createGeocerca,
+    updateGeocerca,
+    deleteGeocerca,
+    listGeocercas,
     listGeocercaById,
-    listUsersByGeocerca
+    listUsersByGeocerca,
+    listAllGeocercas
 } from '../modules/geocerca/geocerca.controller.js';
 
-const  router = Router();
+const router = Router();
 
 router.post('/create', auth, isAdmin, createGeocerca);
 router.put('/update/:id', auth, isAdmin, updateGeocerca);
 router.delete('/delete/:id', auth, isAdmin, deleteGeocerca);
 router.get('/list/:id', auth, isAdmin, listGeocercas);
+router.get('/list', auth, isAdmin, listAllGeocercas);
 router.get('/watch/:id', auth, isAdmin, listGeocercaById);
 router.get('/users/:id', auth, isAdmin, listUsersByGeocerca);
 

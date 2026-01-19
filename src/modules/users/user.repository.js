@@ -1,6 +1,6 @@
-export async function me (client, id){
+export async function me(client, id) {
   const query = (
-      `
+    `
       SELECT 
         p.id, p.codigo_empleado, p.cargo,
         p.es_admin, p.estado, p.created_at,
@@ -11,11 +11,11 @@ export async function me (client, id){
         AND p.estado = 'ACTIVO'
       `);
 
-    return await client.query(query, [id]);
+  return await client.query(query, [id]);
 
 };
 
-export async function watchUser(client, id){
+export async function watchUser(client, id) {
   const query = (`
     SELECT 
         p.id, p.codigo_empleado, p.cargo,
@@ -29,21 +29,34 @@ export async function watchUser(client, id){
   return await client.query(query, [id]);
 }
 
-export async function listUsers (client, state){
+export async function listUsers(client, state) {
 
-    const query = (
-      `
+  const query = (
+    `
       SELECT 
-        p.id, p.codigo_empleado, p.cargo,
-        p.es_admin, p.estado, p.created_at,
-        per.nombre_completo, per.email, per.telefono
-      FROM perfil p
-      INNER JOIN persona per ON p.persona_id = per.id
-      WHERE p.estado = $1
+        pf.id AS user_id,
+        pf.codigo_empleado AS user_codigo,
+        pf.cargo,
+        pf.es_admin,
+        pf.estado,
+        pf.created_at,
+        CASE WHEN pf.es_admin THEN 'ADMIN' ELSE 'USER' END AS user_rol,
+        per.nombre_completo AS user_nombre_completo,
+        per.email AS user_email,
+        per.telefono,
+        s.nombre AS sede_nombre
+      FROM perfil pf
+      INNER JOIN persona per ON pf.persona_id = per.id
+      LEFT JOIN asignacion_laboral al ON pf.id = al.perfil_id
+      LEFT JOIN geocerca g ON al.geocerca_id = g.id
+      LEFT JOIN sede s ON g.sede_id = s.id
+      WHERE pf.estado = $1
+      GROUP BY pf.id, per.id, s.nombre
+      ORDER BY pf.codigo_empleado ASC
       `
-    );
+  );
 
-    return await client.query(query, [state]);
+  return await client.query(query, [state]);
 };
 
 export async function verAdmin(client, id) {
@@ -63,14 +76,14 @@ export async function verAdmin(client, id) {
   return result || null;
 };
 
-export async function changeRole(client, bool, id){
-    const query=(
-      `UPDATE perfil 
+export async function changeRole(client, bool, id) {
+  const query = (
+    `UPDATE perfil 
        SET es_admin = $1, updated_at = NOW() 
        WHERE id = $2
        RETURNING es_admin`
-    );
-    return await client.query(query, [bool, id]);
+  );
+  return await client.query(query, [bool, id]);
 
 }
 
@@ -120,7 +133,7 @@ export async function countUsers(pool, state) {
   return Number(result.rows[0].total);
 }
 
-export async function countEveryone(pool){
+export async function countEveryone(pool) {
   const query = `
     SELECT COUNT(*) AS total
     FROM perfil

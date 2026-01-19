@@ -1,6 +1,12 @@
 import api from "./axiosConfig";
 
 export const geocercaService = {
+  // LISTAR TODAS las geocercas con nombre de sede
+  getAllGeocercas: async () => {
+    const res = await api.get('/geocerca/list');
+    return res.data;
+  },
+
   // LISTAR geocercas por sede
   listarPorSede: async (sedeId) => {
     const res = await api.get(`/geocerca/list/${sedeId}`);

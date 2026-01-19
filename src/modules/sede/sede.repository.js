@@ -1,42 +1,45 @@
 export async function checkDirection(client, direccion) {
-    const query = `
+  const query = `
       SELECT 1 FROM sede WHERE LOWER(direccion) = LOWER($1)
     `;
-    const result = await client.query(query, [direccion]);
-    return result.rowCount > 0;
+  const result = await client.query(query, [direccion]);
+  return result.rowCount > 0;
 }
 
 export async function insertSede(client, nombre, direccion, latitud, longitud) {
-    const query = `
+  const query = `
       INSERT INTO sede (nombre, direccion, latitud, longitud)
       VALUES ($1, $2, $3, $4)
       RETURNING * `;
-    // RETURNING * devuelve todo (incluido el ID generado y created_at)
-    const result = await client.query(query, [nombre, direccion, latitud, longitud]);
-    return result.rows[0];
+  // RETURNING * devuelve todo (incluido el ID generado y created_at)
+  const result = await client.query(query, [nombre, direccion, latitud, longitud]);
+  return result.rows[0];
 }
 
 export async function readSedes(pool) {
-    const query = `
+  const query = `
       SELECT 
         s.id,
         s.nombre,
         s.direccion,
         s.latitud,
         s.longitud,
-        COUNT(g.id) AS cantidad_geocercas,
-        COALESCE(STRING_AGG(g.nombre_zona, ', '), 'Sin geocercas asignadas') AS nombres_geocercas
+        COUNT(DISTINCT g.id) AS cantidad_geocercas,
+        COUNT(DISTINCT CASE WHEN pf.estado = 'ACTIVO' THEN al.perfil_id END) AS total_usuarios,
+        COALESCE(STRING_AGG(DISTINCT g.nombre_zona, ', '), 'Sin geocercas asignadas') AS nombres_geocercas
       FROM sede s
       LEFT JOIN geocerca g ON s.id = g.sede_id
+      LEFT JOIN asignacion_laboral al ON g.id = al.geocerca_id
+      LEFT JOIN perfil pf ON al.perfil_id = pf.id
       GROUP BY s.id, s.nombre, s.direccion, s.latitud, s.longitud
       ORDER BY s.nombre ASC;
     `;
-    const result = await pool.query(query);
-    return result; // ✅ Devolver el objeto completo, no solo .rows
-}
+  const result = await pool.query(query);
+  return result; // ✅ Devolver el objeto completo, no solo .rows
+};
 
 export async function readById(pool, id) {
-    const query = `
+  const query = `
     SELECT 
         s.id,
         s.nombre,
@@ -51,22 +54,22 @@ export async function readById(pool, id) {
     GROUP BY s.id, s.nombre, s.direccion, s.latitud, s.longitud;
     `;
 
-    const result = await pool.query(query, [id]);
-    return result.rows[0];
+  const result = await pool.query(query, [id]);
+  return result.rows[0];
 }
 
-export async function verSede(client, id){
-    const query = `
+export async function verSede(client, id) {
+  const query = `
     SELECT id, nombre, direccion, latitud, longitud 
     FROM sede 
     WHERE id = $1
     `;
-    const result = await client.query(query, [id]);
-    return result.rows[0];
+  const result = await client.query(query, [id]);
+  return result.rows[0];
 }
 
-export async function modifySede(client, id, nombre, direccion, latitud, longitud){
-    const query = `
+export async function modifySede(client, id, nombre, direccion, latitud, longitud) {
+  const query = `
         UPDATE sede
         SET nombre = $2, 
             direccion = $3, 
@@ -76,14 +79,14 @@ export async function modifySede(client, id, nombre, direccion, latitud, longitu
         WHERE id = $1
         RETURNING *
     `;
-    const result = await client.query(query, [id, nombre, direccion, latitud, longitud]);
-    return result.rows[0]; 
+  const result = await client.query(query, [id, nombre, direccion, latitud, longitud]);
+  return result.rows[0];
 };
 
-export async function borrar(client, id){
-    const query = `DELETE FROM sede WHERE id = $1`;
-    await client.query(query, [id]);
-    return true;
+export async function borrar(client, id) {
+  const query = `DELETE FROM sede WHERE id = $1`;
+  await client.query(query, [id]);
+  return true;
 }
 
 export async function listarUsuarios(pool, sede_id) {
@@ -105,7 +108,7 @@ export async function listarUsuarios(pool, sede_id) {
   return result.rows;
 }
 
-export async function countSedes(pool){
+export async function countSedes(pool) {
   const query = `
     SELECT COUNT(*) AS total_sedes FROM sede;
   `;

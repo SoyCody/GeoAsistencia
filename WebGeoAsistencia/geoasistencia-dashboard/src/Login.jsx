@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { authService } from "./api/authService";
+import { userService } from "./api/userService";
 
 export default function Login({ onLogin }) {
   const [codigo, setCodigo] = useState("");
@@ -13,19 +14,21 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
+      // 1. Login y obtener token
+      const loginData = await authService.login(codigo, password);
+      localStorage.setItem("token", loginData.token);
 
-      const data = await authService.login(
-        codigo,
-        password
-      );
+      // 2. Obtener datos completos del usuario
+      const userData = await userService.getMe();
 
-      localStorage.setItem("token", data.token);
-      onLogin(data.token);
+      // 3. Pasar datos del usuario al componente padre
+      onLogin(userData.data);
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Código o contraseña incorrectos"
+        "Código o contraseña incorrectos"
       );
+      localStorage.removeItem("token");
     } finally {
       setLoading(false);
     }

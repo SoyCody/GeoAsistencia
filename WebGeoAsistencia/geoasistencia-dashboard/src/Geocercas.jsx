@@ -1,15 +1,27 @@
 import geocercaService from './api/geocercaService.js';
+import sedeService from './api/sedeService.js';
 import { useState, useEffect } from 'react';
+import MapaGeocercaModal from './components/MapaGeocercaModal';
+import UsuariosGeocercaModal from './components/UsuariosGeocercaModal';
 
 export default function Geocercas() {
-  // Estados
   const [geocercas, setGeocercas] = useState([]);
+  const [geocercasFiltradas, setGeocercasFiltradas] = useState([]);
+  const [sedes, setSedes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [geocercaEditando, setGeocercaEditando] = useState(null);
-  
+
+  // Modales
+  const [mostrarModalMapa, setMostrarModalMapa] = useState(false);
+  const [mostrarModalUsuarios, setMostrarModalUsuarios] = useState(false);
+  const [geocercaSeleccionada, setGeocercaSeleccionada] = useState(null);
+
+  // Filtros
+  const [filtroSede, setFiltroSede] = useState('');
+
   // Estado del formulario
   const [formData, setFormData] = useState({
     sede_id: '',
@@ -19,35 +31,68 @@ export default function Geocercas() {
     radio_metros: ''
   });
 
-  // Cargar geocercas al montar el componente
+  // Cargar geocercas y sedes al montar el componente
   useEffect(() => {
-    // Por defecto cargaremos todas, pero idealmente deberías tener una sede seleccionada
-    // cargarGeocercas('7259a661-6104-43f8-8144-3ca4b9f95c13'); // Ejemplo con UUID
+    cargarGeocercas();
+    cargarSedes();
   }, []);
 
-  // Cargar geocercas por sede
-  const cargarGeocercas = async (sedeId) => {
+  // Aplicar filtros cuando cambian
+  useEffect(() => {
+    aplicarFiltros();
+  }, [geocercas, filtroSede]);
+
+  // Mostrar mensaje temporal
+  const mostrarMensaje = (texto, tipo) => {
+    setMensaje({ texto, tipo });
+    setTimeout(() => setMensaje({ texto: '', tipo: '' }), 4000);
+  };
+
+  // Cargar TODAS las geocercas con nombre de sede
+  const cargarGeocercas = async () => {
     try {
       setLoading(true);
-      setError(null);
-      const response = await geocercaService.listarPorSede(sedeId);
-      
-      // Verificar que la respuesta tenga la estructura correcta
+      setMensaje({ texto: '', tipo: '' });
+      const response = await geocercaService.getAllGeocercas();
+
       console.log('Respuesta del servidor:', response);
-      
+
       if (response && response.geocercas && Array.isArray(response.geocercas)) {
         setGeocercas(response.geocercas);
       } else {
         setGeocercas([]);
-        setError('La respuesta del servidor no tiene el formato esperado');
+        mostrarMensaje('La respuesta del servidor no tiene el formato esperado', 'error');
       }
     } catch (err) {
-      console.error('Error completo:', err);
-      setError(err.response?.data?.message || 'Error al cargar geocercas');
-      setGeocercas([]); 
+      console.error('Error:', err);
+      mostrarMensaje(err.response?.data?.message || 'Error al cargar geocercas', 'error');
+      setGeocercas([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Cargar sedes para el filtro
+  const cargarSedes = async () => {
+    try {
+      const response = await sedeService.listar();
+      if (response && response.sedes && Array.isArray(response.sedes)) {
+        setSedes(response.sedes);
+      }
+    } catch (err) {
+      console.error('Error al cargar sedes:', err);
+    }
+  };
+
+  // Aplicar filtros
+  const aplicarFiltros = () => {
+    let filtradas = [...geocercas];
+
+    // Filtro por sede
+    if (filtroSede) {
+      filtradas = filtradas.filter(g => g.sede_id === filtroSede);
+    }
+    setGeocercasFiltradas(filtradas);
   };
 
   // Manejar cambios en el formulario
@@ -62,10 +107,10 @@ export default function Geocercas() {
   // Crear nueva geocerca
   const handleCrear = async (e) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
-      setError(null);
+      setMensaje({ texto: '', tipo: '' });
 
       const dataToSend = {
         sede_id: formData.sede_id,
@@ -77,10 +122,9 @@ export default function Geocercas() {
 
       const response = await geocercaService.crear(dataToSend);
       console.log('Geocerca creada:', response);
-      
-      alert('Geocerca creada exitosamente');
-      
-      // Limpiar formulario
+
+      mostrarMensaje('Geocerca creada exitosamente', 'success');
+
       setFormData({
         sede_id: '',
         nombre_zona: '',
@@ -88,18 +132,13 @@ export default function Geocercas() {
         longitud: '',
         radio_metros: ''
       });
-      
+
       setMostrarFormulario(false);
-      
-      // Recargar lista
-      if (formData.sede_id) {
-        cargarGeocercas(formData.sede_id);
-      }
-      
+      cargarGeocercas();
+
     } catch (err) {
       console.error('Error al crear:', err);
-      setError(err.response?.data?.message || 'Error al crear geocerca');
-      alert(err.response?.data?.message || 'Error al crear geocerca');
+      mostrarMensaje(err.response?.data?.message || 'Error al crear geocerca', 'error');
     } finally {
       setLoading(false);
     }
@@ -109,16 +148,15 @@ export default function Geocercas() {
   const handleEditar = async (geocerca) => {
     try {
       setLoading(true);
-      // Cargar datos completos de la geocerca
       const response = await geocercaService.obtenerPorId(geocerca.id);
       console.log('Geocerca obtenida:', response);
-      
+
       const geocercaCompleta = response.geocerca;
-      
+
       if (!geocercaCompleta) {
         throw new Error('No se pudo obtener la geocerca');
       }
-      
+
       setFormData({
         sede_id: geocercaCompleta.sede_id || '',
         nombre_zona: geocercaCompleta.nombre_zona || '',
@@ -126,15 +164,14 @@ export default function Geocercas() {
         longitud: geocercaCompleta.longitud || '',
         radio_metros: geocercaCompleta.radio_metros || ''
       });
-      
+
       setGeocercaEditando(geocercaCompleta);
       setModoEdicion(true);
       setMostrarFormulario(true);
-      
+
     } catch (err) {
       console.error('Error al editar:', err);
-      setError(err.response?.data?.message || 'Error al cargar geocerca');
-      alert('Error al cargar los datos de la geocerca');
+      mostrarMensaje('Error al cargar los datos de la geocerca', 'error');
     } finally {
       setLoading(false);
     }
@@ -143,12 +180,12 @@ export default function Geocercas() {
   // Actualizar geocerca
   const handleActualizar = async (e) => {
     e.preventDefault();
-    
+
     if (!geocercaEditando) return;
-    
+
     try {
       setLoading(true);
-      setError(null);
+      setMensaje({ texto: '', tipo: '' });
 
       const dataToSend = {
         nombre_zona: formData.nombre_zona,
@@ -159,53 +196,39 @@ export default function Geocercas() {
 
       const response = await geocercaService.actualizar(geocercaEditando.id, dataToSend);
       console.log('Geocerca actualizada:', response);
-      
-      alert('Geocerca actualizada exitosamente');
-      
-      // Limpiar
+
+      mostrarMensaje('Geocerca actualizada exitosamente', 'success');
+
       cancelarEdicion();
-      
-      // Recargar lista
-      if (formData.sede_id) {
-        cargarGeocercas(formData.sede_id);
-      }
-      
+      cargarGeocercas();
+
     } catch (err) {
       console.error('Error al actualizar:', err);
-      setError(err.response?.data?.message || 'Error al actualizar geocerca');
-      alert(err.response?.data?.message || 'Error al actualizar geocerca');
+      mostrarMensaje(err.response?.data?.message || 'Error al actualizar geocerca', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   // Eliminar geocerca
-  const handleEliminar = async (id) => {
-    if (!window.confirm('¿Está seguro de eliminar esta geocerca?')) {
+  const handleEliminar = async (id, nombreZona) => {
+    if (!window.confirm(`¿Está seguro de eliminar la geocerca "${nombreZona}"? Esta acción no se puede deshacer.`)) {
       return;
     }
 
     try {
       setLoading(true);
-      setError(null);
-      
+      setMensaje({ texto: '', tipo: '' });
+
       const response = await geocercaService.eliminar(id);
       console.log('Geocerca eliminada:', response);
-      
-      alert('Geocerca eliminada exitosamente');
-      
-      // Recargar lista
-      const sedeActual = geocercas[0]?.sede_id;
-      if (sedeActual) {
-        cargarGeocercas(sedeActual);
-      } else {
-        setGeocercas(prev => prev.filter(g => g.id !== id));
-      }
-      
+
+      mostrarMensaje('Geocerca eliminada exitosamente', 'success');
+      cargarGeocercas();
+
     } catch (err) {
       console.error('Error al eliminar:', err);
-      setError(err.response?.data?.message || 'Error al eliminar geocerca');
-      alert(err.response?.data?.message || 'Error al eliminar geocerca');
+      mostrarMensaje(err.response?.data?.message || 'Error al eliminar geocerca', 'error');
     } finally {
       setLoading(false);
     }
@@ -246,6 +269,34 @@ export default function Geocercas() {
     return `https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
   };
 
+  // Limpiar filtros
+  const limpiarFiltros = () => {
+    setFiltroSede('');
+  };
+
+  // Abrir modal de mapa
+  const abrirModalMapa = (geocerca) => {
+    setGeocercaSeleccionada(geocerca);
+    setMostrarModalMapa(true);
+  };
+
+  // Abrir modal de usuarios
+  const abrirModalUsuarios = (geocerca) => {
+    setGeocercaSeleccionada(geocerca);
+    setMostrarModalUsuarios(true);
+  };
+
+  // Cerrar modales
+  const cerrarModalMapa = () => {
+    setMostrarModalMapa(false);
+    setGeocercaSeleccionada(null);
+  };
+
+  const cerrarModalUsuarios = () => {
+    setMostrarModalUsuarios(false);
+    setGeocercaSeleccionada(null);
+  };
+
   return (
     <div style={styles.container}>
       {/* HEADER */}
@@ -257,111 +308,155 @@ export default function Geocercas() {
           </p>
         </div>
 
-        <button 
+        <button
           style={styles.btnPrimary}
           onClick={abrirFormularioNuevo}
           disabled={loading}
         >
-        Nueva Geocerca
+          Nueva Geocerca
         </button>
       </div>
 
-      {/* MENSAJES DE ERROR */}
-      {error && (
-        <div style={styles.errorCard}>
-          <p style={styles.errorText}>{error}</p>
-          <button 
-            onClick={() => setError(null)}
-            style={{...styles.link, marginTop: 8}}
-          >
-            Cerrar
-          </button>
+      {/* MENSAJES DE FEEDBACK */}
+      {mensaje.texto && (
+        <div style={mensaje.tipo === 'success' ? styles.messageSuccess : styles.messageError}>
+          {mensaje.texto}
         </div>
       )}
 
-      {/* FILTRO POR SEDE */}
+      {/* FILTROS */}
       <div style={styles.card}>
-        <h3 style={styles.cardTitle}>Filtrar por Sede</h3>
+        <h3 style={styles.cardTitle}>Filtros</h3>
         <div style={styles.filterContainer}>
-          <Input
-            name="filtro_sede"
-            placeholder="UUID de la Sede (ej: 7259a661-6104-43f8-8144-3ca4b9f95c13)"
-            type="text"
-            style={{...styles.input, flex: 1}}
-          />
-          <button 
-            style={styles.btnPrimary}
-            onClick={(e) => {
-              const sedeId = e.target.previousSibling.value.trim();
-              if (sedeId) {
-                console.log('Buscando geocercas para sede:', sedeId);
-                cargarGeocercas(sedeId);
-              } else {
-                alert('Por favor ingrese un UUID de sede');
-              }
-            }}
-            disabled={loading}
-          >
-            {loading ? 'Cargando...' : 'Buscar'}
-          </button>
+          <div style={styles.filterGroup}>
+            <label style={styles.label}>Filtrar por Sede:</label>
+            <select
+              value={filtroSede}
+              onChange={(e) => setFiltroSede(e.target.value)}
+              style={styles.select}
+            >
+              <option value="">Todas las sedes</option>
+              {sedes.map((sede) => (
+                <option key={sede.id} value={sede.id}>
+                  {sede.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {filtroSede && (
+            <button onClick={limpiarFiltros} style={styles.btnSecondary}>
+              Limpiar Filtro
+            </button>
+          )}
         </div>
       </div>
 
       {/* TABLA */}
       <div style={styles.card}>
-        <h3 style={styles.cardTitle}>Listado de Geocercas</h3>
+        <h3 style={styles.cardTitle}>
+          Listado de Geocercas
+          {geocercasFiltradas.length > 0 &&
+            ` (${geocercasFiltradas.length} 
+          resultado${geocercasFiltradas.length !== 1 ? 's' : ''})`}
+        </h3>
 
         {loading && <p>Cargando geocercas...</p>}
 
         {!loading && geocercas.length === 0 && (
-          <p style={styles.emptyText}>
-            No hay geocercas registradas. Utilice el filtro para buscar por sede.
-          </p>
+          <div style={styles.emptyState}>
+            <p style={styles.emptyText}>
+              No hay geocercas registradas en el sistema
+            </p>
+            <p style={styles.emptySubtext}>
+              Cree una nueva geocerca para comenzar
+            </p>
+          </div>
         )}
 
-        {!loading && geocercas.length > 0 && (
-          <div style={{overflowX: 'auto'}}>
+        {!loading && geocercas.length > 0 && geocercasFiltradas.length === 0 && (
+          <div style={styles.emptyState}>
+            <p style={styles.emptyText}>
+              No se encontraron geocercas con los filtros aplicados
+            </p>
+            <p style={styles.emptySubtext}>
+              Intenta ajustar los filtros o limpiarlos
+            </p>
+          </div>
+        )}
+
+        {!loading && geocercasFiltradas.length > 0 && (
+          <div style={{ overflowX: 'auto' }}>
             <table style={styles.table}>
               <thead>
                 <tr>
-                  <th style={styles.th}>ID</th>
-                  <th style={styles.th}>Sede ID</th>
+                  <th style={styles.th}>Sede</th>
                   <th style={styles.th}>Zona</th>
-                  <th style={styles.th}>Latitud</th>
-                  <th style={styles.th}>Longitud</th>
-                  <th style={styles.th}>Radio (m)</th>
+                  <th style={styles.th}>Usuarios</th>
                   <th style={styles.th}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {geocercas.map((geocerca) => (
+                {geocercasFiltradas.map((geocerca) => (
                   <tr key={geocerca.id}>
-                    <td style={styles.td} title={geocerca.id}>
-                      {/*Validar que id exista antes de usar substring */}
-                      {geocerca.id ? geocerca.id.substring(0, 8) + '...' : 'N/A'}
-                    </td>
-                    <td style={styles.td} title={geocerca.sede_id}>
-                      {geocerca.sede_id ? geocerca.sede_id.substring(0, 8) + '...' : 'N/A'}
-                    </td>
-                    <td style={styles.td}>{geocerca.nombre_zona || 'N/A'}</td>
-                    <td style={styles.td}>{geocerca.latitud || 'N/A'}</td>
-                    <td style={styles.td}>{geocerca.longitud || 'N/A'}</td>
-                    <td style={styles.td}>{geocerca.radio_metros || 'N/A'}</td>
+                    <td style={styles.td}>{geocerca.sede_nombre || 'N/A'}</td>
+
+                    {/* Columna Zona con Radio */}
                     <td style={styles.td}>
-                      <button 
-                        style={styles.link}
-                        onClick={() => handleEditar(geocerca)}
-                        disabled={loading}
-                      >
-                        Editar
-                      </button>
-                      <button 
-                        style={styles.linkDanger}
-                        onClick={() => handleEliminar(geocerca.id)}
-                        disabled={loading}
-                      >
-                        Eliminar
-                      </button>
+                      <div>
+                        <div style={{ fontWeight: '500', color: '#1f2937' }}>
+                          {geocerca.nombre_zona}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                          Radio: {geocerca.radio_metros}m
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Columna Usuarios */}
+                    <td style={styles.td}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontWeight: '600', color: '#1f2937' }}>
+                          {geocerca.usuarios_count || 0}
+                        </span>
+                        <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                          {geocerca.usuarios_count === 1 ? 'usuario' : 'usuarios'}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Acciones */}
+                    <td style={styles.td}>
+                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                        <button
+                          style={styles.linkMap}
+                          onClick={() => abrirModalMapa(geocerca)}
+                          disabled={loading}
+                        >
+                          Ver mapa
+                        </button>
+                        <button
+                          style={styles.linkUsers}
+                          onClick={() => abrirModalUsuarios(geocerca)}
+                          disabled={loading}
+                        >
+                          Usuarios
+                        </button>
+                        <button
+                          style={styles.link}
+                          onClick={() => handleEditar(geocerca)}
+                          disabled={loading}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          style={styles.linkDanger}
+                          onClick={() => handleEliminar(geocerca.id, geocerca.nombre_zona)}
+                          disabled={loading}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -382,15 +477,25 @@ export default function Geocercas() {
             <div style={styles.formContainer}>
               {/* FORM */}
               <div style={styles.formGrid}>
-                <Input
-                  name="sede_id"
-                  placeholder="UUID de la Sede *"
-                  value={formData.sede_id}
-                  onChange={handleInputChange}
-                  required
-                  type="text"
-                  disabled={modoEdicion}
-                />
+                <div>
+                  <label style={styles.label}>Sede *</label>
+                  <select
+                    name="sede_id"
+                    value={formData.sede_id}
+                    onChange={handleInputChange}
+                    required
+                    disabled={modoEdicion}
+                    style={styles.select}
+                  >
+                    <option value="">Seleccione una sede</option>
+                    {sedes.map((sede) => (
+                      <option key={sede.id} value={sede.id}>
+                        {sede.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <Input
                   name="nombre_zona"
                   placeholder="Nombre de la zona *"
@@ -442,14 +547,14 @@ export default function Geocercas() {
             </div>
 
             <div style={styles.formActions}>
-              <button 
+              <button
                 type="submit"
                 style={styles.btnPrimary}
                 disabled={loading}
               >
                 {loading ? 'Guardando...' : modoEdicion ? 'Actualizar' : 'Guardar'}
               </button>
-              <button 
+              <button
                 type="button"
                 style={styles.btnSecondary}
                 onClick={cancelarEdicion}
@@ -461,6 +566,22 @@ export default function Geocercas() {
           </form>
         </div>
       )}
+
+      {/* MODALES */}
+      {mostrarModalMapa && geocercaSeleccionada && (
+        <MapaGeocercaModal
+          geocerca={geocercaSeleccionada}
+          onClose={cerrarModalMapa}
+        />
+      )}
+
+      {mostrarModalUsuarios && geocercaSeleccionada && (
+        <UsuariosGeocercaModal
+          geocerca={geocercaSeleccionada}
+          onClose={cerrarModalUsuarios}
+          onUsuariosActualizados={cargarGeocercas}
+        />
+      )}
     </div>
   );
 }
@@ -470,7 +591,7 @@ export default function Geocercas() {
 /* ===================== */
 
 function Input(props) {
-  return <input {...props} style={{...styles.input, ...props.style}} />;
+  return <input {...props} style={{ ...styles.input, ...props.style }} />;
 }
 
 /* ===================== */
@@ -511,31 +632,72 @@ const styles = {
   cardTitle: {
     marginBottom: 16,
     fontSize: 18,
+    color: "#0f172a",
+    fontWeight: "600",
   },
 
-  errorCard: {
+  messageSuccess: {
+    padding: "12px 20px",
+    marginBottom: "20px",
+    borderRadius: "8px",
+    background: "#d1fae5",
+    color: "#065f46",
+    border: "1px solid #6ee7b7",
+    fontWeight: "500",
+  },
+
+  messageError: {
+    padding: "12px 20px",
+    marginBottom: "20px",
+    borderRadius: "8px",
     background: "#fee2e2",
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 24,
-    border: "1px solid #fecaca",
-  },
-
-  errorText: {
-    color: "#dc2626",
-    margin: 0,
-  },
-
-  emptyText: {
-    color: "#64748b",
-    textAlign: "center",
-    padding: "20px 0",
+    color: "#991b1b",
+    border: "1px solid #fca5a5",
+    fontWeight: "500",
   },
 
   filterContainer: {
     display: "flex",
-    gap: 12,
-    alignItems: "center",
+    gap: 16,
+    alignItems: "end",
+  },
+
+  filterGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#475569",
+  },
+
+  select: {
+    padding: 12,
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
+    fontSize: 14,
+    background: "#ffffff",
+    color: "#1e293b",
+  },
+
+  emptyState: {
+    textAlign: "center",
+    padding: "40px 20px",
+  },
+
+  emptyText: {
+    color: "#475569",
+    fontSize: 16,
+    margin: "0 0 8px 0",
+  },
+
+  emptySubtext: {
+    color: "#94a3b8",
+    fontSize: 14,
+    margin: 0,
   },
 
   table: {
@@ -549,6 +711,8 @@ const styles = {
     borderBottom: "2px solid #e5e7eb",
     color: "#334155",
     whiteSpace: "nowrap",
+    fontWeight: "600",
+    fontSize: 14,
   },
 
   td: {
@@ -574,6 +738,24 @@ const styles = {
     textDecoration: "underline",
   },
 
+  linkMap: {
+    background: "none",
+    border: "none",
+    color: "#0891b2",
+    cursor: "pointer",
+    textDecoration: "underline",
+    marginRight: 12,
+  },
+
+  linkUsers: {
+    background: "none",
+    border: "none",
+    color: "#9333ea",
+    cursor: "pointer",
+    textDecoration: "underline",
+    marginRight: 12,
+  },
+
   formContainer: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -582,21 +764,23 @@ const styles = {
 
   formGrid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "1fr",
     gap: 18,
   },
 
   input: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 8,
     border: "1px solid #d1d5db",
     fontSize: 14,
     width: "100%",
+    background: "#ffffff",
+    color: "#000f"
   },
 
   map: {
     width: "100%",
-    minHeight: 280,
+    minHeight: 400,
     borderRadius: 10,
     overflow: "hidden",
     border: "1px solid #e5e7eb",
@@ -610,14 +794,15 @@ const styles = {
   },
 
   btnPrimary: {
-    background: "#2563eb",
-    color: "#fff",
-    border: "none",
-    padding: "12px 20px",
+    padding: "10px 18px",
     borderRadius: 10,
+    border: "1px solid #c0c0c0ff",
+    background: "#ffffff",
+    color: "#475569",
     cursor: "pointer",
     fontSize: 14,
-    fontWeight: 500,
+    fontWeight: "500",
+    transition: "all 0.2s"
   },
 
   btnSecondary: {

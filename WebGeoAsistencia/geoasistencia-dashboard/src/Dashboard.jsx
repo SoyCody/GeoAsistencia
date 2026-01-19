@@ -1,54 +1,91 @@
+import { useState, useEffect } from "react";
+import { userService } from "./api/userService.js";
+import sedeService from "./api/sedeService.js";
+
 export default function Dashboard() {
+  const [stats, setStats] = useState({
+    totalUsuarios: 0,
+    usuariosActivos: 0,
+    sedesActivas: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    cargarEstadisticas();
+  }, []);
+
+  const cargarEstadisticas = async () => {
+    setLoading(true);
+
+    try {
+      // Cargar datos en paralelo
+      const [totalUsuarios, usuariosActivos, sedesActivas] = await Promise.all([
+        userService.total(),
+        userService.totalActivos(),
+        sedeService.total(),
+      ]);
+
+      setStats({
+        totalUsuarios: totalUsuarios?.total || 0,
+        usuariosActivos: usuariosActivos?.total || 0,
+        sedesActivas: sedesActivas?.total || 0,
+      });
+    } catch (error) {
+      console.error("Error al cargar estadísticas:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       {/* HEADER */}
       <div style={styles.header}>
-        <h1 style={styles.title}> Dashboard General</h1>
+        <h1 style={styles.title}>Dashboard General</h1>
         <span style={styles.subtitle}>
           Resumen del sistema de asistencia
         </span>
       </div>
 
       {/* KPI CARDS */}
-      <div style={styles.cards}>
-        <Card title="Usuarios Totales" value="256" />
-        <Card title="Asistencias Hoy" value="143" />
-        <Card title="Llegadas Tarde" value="12" />
-        <Card title="Sedes Activas" value="6" />
-      </div>
+      {loading ? (
+        <div style={styles.loadingContainer}>
+          <p style={styles.loadingText}>Cargando estadísticas...</p>
+        </div>
+      ) : (
+        <div style={styles.cards}>
+          <Card title="Usuarios Totales" value={stats.totalUsuarios} />
+          <Card title="Usuarios Activos" value={stats.usuariosActivos} />
+          <Card title="Sedes Activas" value={stats.sedesActivas} />
+          <Card
+            title="Tasa de Actividad"
+            value={stats.totalUsuarios > 0
+              ? `${Math.round((stats.usuariosActivos / stats.totalUsuarios) * 100)}%`
+              : "0%"
+            }
+          />
+        </div>
+      )}
 
       {/* ACTIVIDAD RECIENTE */}
-      <Section title="Actividad Reciente">
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Usuario</th>
-              <th style={styles.th}>Sede</th>
-              <th style={styles.th}>Hora</th>
-              <th style={styles.th}>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={styles.td}>DOC-001</td>
-              <td style={styles.td}>Quito Norte</td>
-              <td style={styles.td}>08:23</td>
-              <td style={styles.ok}>A tiempo</td>
-            </tr>
-            <tr>
-              <td style={styles.td}>DOC-014</td>
-              <td style={styles.td}>Loja Matriz</td>
-              <td style={styles.td}>08:41</td>
-              <td style={styles.warn}>Tarde</td>
-            </tr>
-            <tr>
-              <td style={styles.td}>DOC-256</td>
-              <td style={styles.td}>Matriz</td>
-              <td style={styles.td}>07:58</td>
-              <td style={styles.ok}>A tiempo</td>
-            </tr>
-          </tbody>
-        </table>
+      <Section title="Resumen del Sistema">
+        <div style={styles.summaryGrid}>
+          <SummaryItem
+            label="Total de usuarios registrados"
+            value={stats.totalUsuarios}
+            sublabel="En todo el sistema"
+          />
+          <SummaryItem
+            label="Usuarios activos"
+            value={stats.usuariosActivos}
+            sublabel="Con acceso al sistema"
+          />
+          <SummaryItem
+            label="Sedes operativas"
+            value={stats.sedesActivas}
+            sublabel="Con geocercas configuradas"
+          />
+        </div>
       </Section>
     </>
   );
@@ -74,6 +111,16 @@ function Section({ title, children }) {
   );
 }
 
+function SummaryItem({ label, value, sublabel }) {
+  return (
+    <div style={styles.summaryItem}>
+      <div style={styles.summaryValue}>{value}</div>
+      <div style={styles.summaryLabel}>{label}</div>
+      {sublabel && <div style={styles.summarySublabel}>{sublabel}</div>}
+    </div>
+  );
+}
+
 /* ESTILOS */
 
 const styles = {
@@ -83,73 +130,96 @@ const styles = {
 
   title: {
     margin: 0,
+    fontSize: 28,
+    color: "#0f172a",
   },
 
   subtitle: {
     color: "#64748b",
+    fontSize: 15,
+  },
+
+  loadingContainer: {
+    padding: "60px 20px",
+    textAlign: "center",
+  },
+
+  loadingText: {
+    color: "#64748b",
+    fontSize: 16,
   },
 
   cards: {
     display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
     gap: "20px",
     marginBottom: "30px",
   },
 
   card: {
     background: "#fff",
-    padding: "20px",
-    borderRadius: "14px",
+    padding: "24px",
+    borderRadius: "12px",
     boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
   },
 
   cardTitle: {
     margin: 0,
     color: "#475569",
+    fontSize: 14,
+    fontWeight: "500",
   },
 
   cardValue: {
-    fontSize: "30px",
+    fontSize: "32px",
     fontWeight: "bold",
-    marginTop: "10px",
+    marginTop: "12px",
+    color: "#0f172a",
   },
 
   section: {
     background: "#fff",
-    padding: "20px",
-    borderRadius: "14px",
+    padding: "24px",
+    borderRadius: "12px",
     boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
   },
 
   sectionTitle: {
-    marginBottom: "16px",
+    marginBottom: "20px",
+    color: "#0f172a",
+    fontSize: 18,
+    fontWeight: "600",
   },
 
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
+  summaryGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+    gap: "20px",
   },
 
-  th: {
-    textAlign: "left",
-    padding: "12px",
-    borderBottom: "2px solid #e5e7eb",
+  summaryItem: {
+    padding: "20px",
+    borderRadius: "8px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
   },
 
-  td: {
-    padding: "12px",
-    borderBottom: "1px solid #e5e7eb",
-  },
-
-  ok: {
-    padding: "12px",
-    color: "#16a34a",
+  summaryValue: {
+    fontSize: "28px",
     fontWeight: "bold",
+    color: "#2563eb",
+    marginBottom: "8px",
   },
 
-  warn: {
-    padding: "12px",
-    color: "#dc2626",
-    fontWeight: "bold",
+  summaryLabel: {
+    fontSize: "14px",
+    color: "#334155",
+    fontWeight: "500",
+  },
+
+  summarySublabel: {
+    fontSize: "13px",
+    color: "#64748b",
+    marginTop: "4px",
   },
 };

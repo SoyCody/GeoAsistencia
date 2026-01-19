@@ -16,3 +16,22 @@ export async function insertarAuditoria(client, audit) {
     audit.detalle
   ]);
 }
+
+export async function obtenerAuditorias(client) {
+  const query = `
+    SELECT 
+      a.id,
+      a.tabla_afectada,
+      a.accion,
+      a.detalle_cambio,
+      a.fecha_hora,
+      pf.codigo_empleado
+    FROM auditoria a
+    INNER JOIN perfil pf ON pf.id = a.admin_perfil_id
+    ORDER BY a.fecha_hora DESC
+    LIMIT 50
+  `;
+
+  const result = await client.query(query);
+  return result.rows;
+}
