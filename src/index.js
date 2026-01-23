@@ -24,7 +24,7 @@ app.use(helmet());
 app.use(morgan('dev'));
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: ['http://localhost:5173', 'http://localhost:8081', 'http://localhost:8082'],
     credentials: true
 }));
 const PORT = 3000;

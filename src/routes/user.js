@@ -1,12 +1,12 @@
-import { Router } from 'express';
-import  { 
-    getMe, 
-    listActives, 
-    listSuspended, 
-    listDeleted, 
-    assignAdmin, 
-    revokeAdmin, 
-    deleteUser, 
+import Router from 'express';
+import {
+    getMe,
+    listActives,
+    listSuspended,
+    listDeleted,
+    assignAdmin,
+    revokeAdmin,
+    deleteUser,
     suspendUser,
     actives,
     suspended,
@@ -15,16 +15,18 @@ import  {
     watch,
     updateUser
 } from '../modules/users/user.controller.js';
+import { getMyProfile } from '../modules/user/user.controller.mobile.js';
 import { auth, isAdmin } from '../middlewares/auth.middleware.js';
 
-const router= Router();
+const router = Router();
 
 // Rutas administradores
 router.put('/admin/:id', auth, isAdmin, assignAdmin);
 router.put('/revoke/:id', auth, isAdmin, revokeAdmin)
 
-// Rutas para usuarios
+// Rutas para usuarios (ambos)
 router.get('/me', auth, getMe);
+router.get('/profile', auth, getMyProfile); // Nuevo endpoint móvil con estadísticas
 
 // Rutas para administradores
 router.get('/list/active', auth, isAdmin, listActives);

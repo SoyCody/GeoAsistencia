@@ -57,6 +57,9 @@ export async function getUsersByGeocerca(pool, geocercaId) {
 
 // Obtener usuarios disponibles para asignar a una geocerca
 export async function getAvailableUsersForGeocerca(pool, geocercaId, sedeId) {
+    // SIMPLIFICADO: devolver todos los usuarios activos no asignados a esta geocerca
+    // Esto incluye usuarios sin asignaciones y usuarios asignados a otras geocercas
+
     const query = `
         SELECT 
             pf.id AS user_id,
@@ -66,18 +69,15 @@ export async function getAvailableUsersForGeocerca(pool, geocercaId, sedeId) {
             pf.cargo
         FROM perfil pf
         INNER JOIN persona per ON pf.persona_id = per.id
-        INNER JOIN asignacion_laboral al_sede ON pf.id = al_sede.perfil_id
-        INNER JOIN geocerca g_sede ON al_sede.geocerca_id = g_sede.id
-        WHERE g_sede.sede_id = $2
-          AND pf.estado = 'ACTIVO'
+        WHERE pf.estado = 'ACTIVO'
           AND pf.id NOT IN (
               SELECT perfil_id 
               FROM asignacion_laboral 
               WHERE geocerca_id = $1
           )
-        GROUP BY pf.id, per.nombre_completo, per.email, pf.cargo, pf.codigo_empleado
         ORDER BY per.nombre_completo ASC
     `;
-    const result = await pool.query(query, [geocercaId, sedeId]);
+
+    const result = await pool.query(query, [geocercaId]);
     return result.rows;
 }

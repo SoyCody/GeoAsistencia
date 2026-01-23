@@ -19,4 +19,9 @@ export const authService = {
     const response = await api.post("/auth/logout");
     return response.data;
   },
+
+  createUser: async (userData) => {
+    const response = await api.post("/auth/create-user", userData);
+    return response.data;
+  },
 };

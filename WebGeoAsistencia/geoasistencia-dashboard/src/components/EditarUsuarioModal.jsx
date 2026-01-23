@@ -48,11 +48,14 @@ export default function EditarUsuarioModal({ usuario, onClose, onUsuarioActualiz
         setMensaje({ texto: '', tipo: '' });
 
         try {
-            await userService.updateUser(usuario.user_id, {
-                email: formData.email,
-                telefono: formData.telefono || null,
-                cargo: formData.cargo || null
-            });
+            // Enviar solo los campos que tienen valor o cadenas vacías (no null)
+            const payload = {
+                email: formData.email.trim(),
+                telefono: formData.telefono.trim(),
+                cargo: formData.cargo.trim()
+            };
+
+            await userService.updateUser(usuario.user_id, payload);
 
             setMensaje({ texto: 'Usuario actualizado exitosamente', tipo: 'success' });
 
@@ -174,7 +177,7 @@ export default function EditarUsuarioModal({ usuario, onClose, onUsuarioActualiz
                     {/* Información adicional */}
                     <div style={styles.infoBox}>
                         <div style={{ fontSize: '14px', color: '#1e40af', marginBottom: '4px', fontWeight: '500' }}>
-                            ℹ️ Información
+                            Información
                         </div>
                         <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: '#1e40af' }}>
                             <li>Los cambios se aplicarán inmediatamente</li>
@@ -231,18 +234,19 @@ const styles = {
     },
 
     header: {
-        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-        color: '#fff',
-        padding: '20px 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "24px",
+        borderBottom: "1px solid #e5e7eb",
+        background: '#110a53ff'
     },
 
     title: {
         margin: 0,
         fontSize: '20px',
         fontWeight: '700',
+        color: "#ffffffff"
     },
 
     subtitle: {
@@ -252,17 +256,15 @@ const styles = {
     },
 
     closeBtn: {
-        background: 'rgba(255, 255, 255, 0.2)',
-        border: 'none',
-        color: '#fff',
-        fontSize: '24px',
-        width: '36px',
-        height: '36px',
-        borderRadius: '50%',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        background: "rgba(255, 255, 255, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+        fontSize: 20,
+        cursor: "pointer",
+        color: "#ffffff",
+        padding: "8px 12px",
+        borderRadius: "8px",
+        transition: "all 0.2s ease",
+        fontWeight: "600",
     },
 
     messageSuccess: {
@@ -319,6 +321,8 @@ const styles = {
         borderRadius: '8px',
         fontSize: '14px',
         boxSizing: 'border-box',
+        background: "#ffffffff",
+        color: "#000f"
     },
 
     inputError: {

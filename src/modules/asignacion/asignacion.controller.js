@@ -1,4 +1,4 @@
-import { pool } from '../../config/db.js';
+﻿import { pool } from '../../config/db.js';
 import { assign, watchAssign, existsAssign, removeAssign, getUsersByGeocerca, getAvailableUsersForGeocerca } from './assign.repository.js';
 import { auditarCambio } from '../auditoria/auditoria.service.js';
 import { AUDIT_ACTIONS, AUDIT_TABLES } from '../auditoria/auditoria.constants.js';
@@ -193,9 +193,9 @@ export const listUsuariosDisponibles = async (req, res) => {
         const { geocercaId } = req.params;
         const { sedeId } = req.query;
 
-        if (!geocercaId || !sedeId) {
+        if (!geocercaId) {
             return res.status(400).json({
-                message: 'ID de geocerca y sede requeridos'
+                message: 'ID de geocerca requerido'
             });
         }
 

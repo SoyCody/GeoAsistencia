@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import sedeService from "./api/sedeService.js";
 import MapaSedeModal from './components/MapaSedeModal';
+import ActionDropdown from './components/ActionDropdown';
+import MapLocationPicker from './components/MapLocationPicker';
 
 export default function Sedes() {
   // Estados
@@ -86,11 +88,33 @@ export default function Sedes() {
       setLoading(true);
       setMensaje({ texto: '', tipo: '' });
 
+      // Validar coordenadas
+      const latitud = parseFloat(formData.latitud);
+      const longitud = parseFloat(formData.longitud);
+
+      if (isNaN(latitud) || isNaN(longitud)) {
+        mostrarMensaje('Las coordenadas deben ser números válidos', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (latitud < -90 || latitud > 90) {
+        mostrarMensaje('La latitud debe estar entre -90 y 90', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (longitud < -180 || longitud > 180) {
+        mostrarMensaje('La longitud debe estar entre -180 y 180', 'error');
+        setLoading(false);
+        return;
+      }
+
       const dataToSend = {
-        nombre: formData.nombre,
-        direccion: formData.direccion,
-        latitud: parseFloat(formData.latitud),
-        longitud: parseFloat(formData.longitud),
+        nombre: formData.nombre.trim(),
+        direccion: formData.direccion.trim(),
+        latitud: latitud,
+        longitud: longitud,
       };
 
       const response = await sedeService.crear(dataToSend);
@@ -167,14 +191,36 @@ export default function Sedes() {
       setLoading(true);
       setMensaje({ texto: '', tipo: '' });
 
+      // Validar coordenadas
+      const latitud = parseFloat(formData.latitud);
+      const longitud = parseFloat(formData.longitud);
+
+      if (isNaN(latitud) || isNaN(longitud)) {
+        mostrarMensaje('Las coordenadas deben ser números válidos', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (latitud < -90 || latitud > 90) {
+        mostrarMensaje('La latitud debe estar entre -90 y 90', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (longitud < -180 || longitud > 180) {
+        mostrarMensaje('La longitud debe estar entre -180 y 180', 'error');
+        setLoading(false);
+        return;
+      }
+
       const dataToSend = {
-        nombre: formData.nombre,
-        direccion: formData.direccion,
-        latitud: parseFloat(formData.latitud),
-        longitud: parseFloat(formData.longitud),
+        nombre: formData.nombre.trim(),
+        direccion: formData.direccion.trim(),
+        latitud: latitud,
+        longitud: longitud,
       };
 
-      const response = await sedeService.update(sedeEditando.id, dataToSend);
+      const response = await sedeService.actualizar(sedeEditando.id, dataToSend);
       console.log("Sede actualizada:", response);
 
       mostrarMensaje('Sede actualizada exitosamente', 'success');
@@ -356,29 +402,27 @@ export default function Sedes() {
 
                     {/* Acciones */}
                     <td style={styles.td}>
-                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <button
-                          style={styles.linkMap}
-                          onClick={() => abrirModalMapa(sede)}
-                          disabled={loading}
-                        >
-                          Ver mapa
-                        </button>
-                        <button
-                          style={styles.link}
-                          onClick={() => handleEditar(sede)}
-                          disabled={loading}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          style={styles.linkDanger}
-                          onClick={() => handleEliminar(sede.id, sede.nombre)}
-                          disabled={loading}
-                        >
-                          Eliminar
-                        </button>
-                      </div>
+                      <ActionDropdown
+                        items={[
+                          {
+                            label: "Ver Mapa",
+                            onClick: () => abrirModalMapa(sede),
+                            color: "info",
+                          },
+                          {
+                            label: "Editar",
+                            onClick: () => handleEditar(sede),
+                            color: "primary",
+                          },
+                          { divider: true },
+                          {
+                            label: "Eliminar",
+                            onClick: () => handleEliminar(sede.id, sede.nombre),
+                            color: "danger",
+                          },
+                        ]}
+                        position="right"
+                      />
                     </td>
                   </tr>
                 ))}
@@ -413,37 +457,24 @@ export default function Sedes() {
                   onChange={handleInputChange}
                   required
                 />
-                <Input
-                  name="latitud"
-                  placeholder="Latitud *"
-                  value={formData.latitud}
-                  onChange={handleInputChange}
-                  required
-                  type="number"
-                  step="any"
-                />
-                <Input
-                  name="longitud"
-                  placeholder="Longitud *"
-                  value={formData.longitud}
-                  onChange={handleInputChange}
-                  required
-                  type="number"
-                  step="any"
-                />
               </div>
 
-              {/* MAPA */}
-              <div style={styles.map}>
-                <iframe
-                  title="Mapa Sede"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0, borderRadius: 8 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={getMapUrl()}
+              {/* MAPA LOCATION PICKER */}
+              <div style={{ gridColumn: '1 / -1' }}>
+                <h4 style={{ fontSize: '16px', marginBottom: '12px', color: '#374151' }}>
+                  Ubicación de la Sede
+                </h4>
+                <MapLocationPicker
+                  latitude={parseFloat(formData.latitud) || -4.38269}
+                  longitude={parseFloat(formData.longitud) || -79.94549}
+                  onChange={(lat, lng) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      latitud: lat.toString(),
+                      longitud: lng.toString()
+                    }));
+                  }}
+                  showRadiusCircle={false}
                 />
               </div>
             </div>
@@ -628,11 +659,11 @@ const styles = {
   },
 
   input: {
-    padding: 12,
+    padding: 10,
     borderRadius: 8,
     border: "1px solid #d1d5db",
     fontSize: 14,
-    width: "100%",
+    width: "70%",
     background: "#ffffff",
     color: "#000f"
   },

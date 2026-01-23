@@ -24,13 +24,13 @@ export default function UsuariosGeocercaModal({ geocerca, onClose, onUsuariosAct
     const cargarUsuarios = async () => {
         try {
             setLoading(true);
-            console.log('🔍 Cargando usuarios para geocerca:', geocerca.id);
+            console.log('Cargando usuarios para geocerca:', geocerca.id);
             const response = await asignacionService.getUsuariosGeocerca(geocerca.id);
-            console.log('✅ Respuesta recibida:', response);
+            console.log('Respuesta recibida:', response);
             console.log('Usuarios:', response.usuarios);
             setUsuarios(response.usuarios || []);
         } catch (error) {
-            console.error('❌ Error al cargar usuarios:', error);
+            console.error('Error al cargar usuarios:', error);
             console.error('Error response:', error.response?.data);
             mostrarMensajeTemporal('Error al cargar usuarios', 'error');
         } finally {
@@ -130,7 +130,6 @@ export default function UsuariosGeocercaModal({ geocerca, onClose, onUsuariosAct
                 {/* Barra de búsqueda */}
                 <div style={styles.searchBar}>
                     <div style={styles.searchContainer}>
-                        <span style={styles.searchIcon}>🔍</span>
                         <input
                             type="text"
                             placeholder="Buscar usuario..."
@@ -161,7 +160,6 @@ export default function UsuariosGeocercaModal({ geocerca, onClose, onUsuariosAct
 
                             {!loading && usuariosFiltrados.length === 0 && (
                                 <div style={styles.emptyState}>
-                                    <span style={{ fontSize: '48px' }}>👥</span>
                                     <p>No hay usuarios asignados a esta geocerca</p>
                                 </div>
                             )}
@@ -212,7 +210,6 @@ export default function UsuariosGeocercaModal({ geocerca, onClose, onUsuariosAct
 
                             {!loading && disponiblesFiltrados.length === 0 && (
                                 <div style={styles.emptyState}>
-                                    <span style={{ fontSize: '48px' }}>📋</span>
                                     <p>No hay usuarios disponibles para asignar</p>
                                 </div>
                             )}
@@ -284,12 +281,12 @@ const styles = {
     },
 
     header: {
-        background: 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)',
-        color: '#fff',
-        padding: '20px 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "24px",
+        borderBottom: "1px solid #e5e7eb",
+        background: '#110a53ff'
     },
 
     title: {
@@ -305,17 +302,15 @@ const styles = {
     },
 
     closeBtn: {
-        background: 'rgba(255, 255, 255, 0.2)',
-        border: 'none',
-        color: '#fff',
-        fontSize: '24px',
-        width: '36px',
-        height: '36px',
-        borderRadius: '50%',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        background: "rgba(255, 255, 255, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+        fontSize: 20,
+        cursor: "pointer",
+        color: "#ffffff",
+        padding: "8px 12px",
+        borderRadius: "8px",
+        transition: "all 0.2s ease",
+        fontWeight: "600",
     },
 
     messageSuccess: {
@@ -355,16 +350,18 @@ const styles = {
     },
 
     searchInput: {
-        width: '100%',
+        width: '80%',
         padding: '10px 12px 10px 36px',
         border: '1px solid #d1d5db',
         borderRadius: '8px',
         fontSize: '14px',
+        backgroundColor: "#ffffff",
+        color: "#000000"
     },
 
     btnAgregar: {
         padding: '10px 20px',
-        backgroundColor: '#9333ea',
+        backgroundColor: '#3b82f6',
         color: '#fff',
         border: 'none',
         borderRadius: '8px',
@@ -514,8 +511,8 @@ const styles = {
 
     btnCerrar: {
         padding: '10px 24px',
-        backgroundColor: '#4b5563',
-        color: '#fff',
+        backgroundColor: '#e5e7eb',
+        color: '#111827',
         border: 'none',
         borderRadius: '8px',
         fontSize: '14px',

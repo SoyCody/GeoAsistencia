@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { userService } from "./api/userService.js";
 import EditarUsuarioModal from "./components/EditarUsuarioModal";
+import CrearUsuarioModal from "./components/CrearUsuarioModal";
+import ActionDropdown from "./components/ActionDropdown";
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -11,6 +13,9 @@ export default function Usuarios() {
   // Estados para modal de edición
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
+
+  // Estados para modal de creación
+  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
 
   // Cargar usuarios según el filtro de estado
   useEffect(() => {
@@ -65,7 +70,7 @@ export default function Usuarios() {
     setLoading(true);
     try {
       await userService.assignAdmin(userId);
-      mostrarMensaje(`✓ Rol de administrador asignado a ${userName}`, "success");
+      mostrarMensaje(`Rol de administrador asignado a ${userName}`, "success");
       cargarUsuarios();
     } catch (error) {
       console.error("Error al asignar admin:", error);
@@ -81,7 +86,7 @@ export default function Usuarios() {
     setLoading(true);
     try {
       await userService.revokeAdmin(userId);
-      mostrarMensaje(`✓ Rol de administrador revocado a ${userName}`, "success");
+      mostrarMensaje(`Rol de administrador revocado a ${userName}`, "success");
       cargarUsuarios();
     } catch (error) {
       console.error("Error al revocar admin:", error);
@@ -97,7 +102,7 @@ export default function Usuarios() {
     setLoading(true);
     try {
       await userService.suspendUser(userId);
-      mostrarMensaje(`✓ Usuario ${userName} suspendido`, "success");
+      mostrarMensaje(`Usuario ${userName} suspendido`, "success");
       cargarUsuarios();
     } catch (error) {
       console.error("Error al suspender usuario:", error);
@@ -113,7 +118,7 @@ export default function Usuarios() {
     setLoading(true);
     try {
       await userService.deleteUser(userId);
-      mostrarMensaje(`✓ Usuario ${userName} eliminado`, "success");
+      mostrarMensaje(`Usuario ${userName} eliminado`, "success");
       cargarUsuarios();
     } catch (error) {
       console.error("Error al eliminar usuario:", error);
@@ -139,12 +144,30 @@ export default function Usuarios() {
     mostrarMensaje("Usuario actualizado exitosamente", "success");
   };
 
+  // Manejar creación de usuario
+  const abrirModalCrear = () => {
+    setMostrarModalCrear(true);
+  };
+
+  const cerrarModalCrear = () => {
+    setMostrarModalCrear(false);
+  };
+
+  const handleUsuarioCreado = () => {
+    cargarUsuarios();
+    mostrarMensaje("Usuario creado exitosamente", "success");
+  };
+
+
 
   return (
     <>
       {/* HEADER */}
       <div style={styles.header}>
         <h1 style={styles.title}>Gestión de Usuarios</h1>
+        <button style={styles.createBtn} onClick={abrirModalCrear}>
+          Crear Usuario
+        </button>
       </div>
 
       {/* MENSAJE DE FEEDBACK */}
@@ -213,6 +236,14 @@ export default function Usuarios() {
           onUsuarioActualizado={handleUsuarioActualizado}
         />
       )}
+
+      {/* MODAL DE CREACIÓN */}
+      {mostrarModalCrear && (
+        <CrearUsuarioModal
+          onClose={cerrarModalCrear}
+          onUsuarioCreado={handleUsuarioCreado}
+        />
+      )}
     </>
   );
 }
@@ -253,57 +284,34 @@ function Table({ headers, usuarios, onEditar, onAsignarAdmin, onRevocarAdmin, on
             </td>
             <td style={styles.td}>{usuario.sede_nombre || "Sin sede"}</td>
             <td style={styles.td}>
-              <div style={styles.actionsContainer}>
-                {/* Botón Editar - Acción primaria */}
-                <button
-                  style={styles.linkEdit}
-                  onClick={() => onEditar(usuario)}
-                  disabled={loading}
-                >
-                  Editar
-                </button>
-
-                {/* Asignar o Revocar Admin */}
-                {usuario.user_rol === "ADMIN" ? (
-                  <button
-                    style={styles.link}
-                    onClick={() => onRevocarAdmin(usuario.user_id, usuario.user_nombre_completo)}
-                    disabled={loading}
-                  >
-                    Revocar Admin
-                  </button>
-                ) : (
-                  <button
-                    style={styles.link}
-                    onClick={() => onAsignarAdmin(usuario.user_id, usuario.user_nombre_completo)}
-                    disabled={loading}
-                  >
-                    Hacer Admin
-                  </button>
-                )}
-
-                {/* Suspender (solo si está activo) */}
-                {filtroEstado === "ACTIVO" && (
-                  <button
-                    style={styles.linkWarning}
-                    onClick={() => onSuspender(usuario.user_id, usuario.user_nombre_completo)}
-                    disabled={loading}
-                  >
-                    Suspender
-                  </button>
-                )}
-
-                {/* Eliminar */}
-                {filtroEstado !== "BORRADO" && (
-                  <button
-                    style={styles.linkDanger}
-                    onClick={() => onEliminar(usuario.user_id, usuario.user_nombre_completo)}
-                    disabled={loading}
-                  >
-                    Eliminar
-                  </button>
-                )}
-              </div>
+              <ActionDropdown
+                items={[
+                  {
+                    label: "Editar",
+                    onClick: () => onEditar(usuario),
+                    color: "primary",
+                  },
+                  {
+                    label: usuario.user_rol === "ADMIN" ? "Revocar Admin" : "Hacer Admin",
+                    onClick: () => usuario.user_rol === "ADMIN"
+                      ? onRevocarAdmin(usuario.user_id, usuario.user_nombre_completo)
+                      : onAsignarAdmin(usuario.user_id, usuario.user_nombre_completo),
+                    color: "secondary",
+                  },
+                  { divider: true },
+                  ...(filtroEstado === "ACTIVO" ? [{
+                    label: "Suspender",
+                    onClick: () => onSuspender(usuario.user_id, usuario.user_nombre_completo),
+                    color: "warning",
+                  }] : []),
+                  ...(filtroEstado !== "BORRADO" ? [{
+                    label: "Eliminar",
+                    onClick: () => onEliminar(usuario.user_id, usuario.user_nombre_completo),
+                    color: "danger",
+                  }] : []),
+                ]}
+                position="right"
+              />
             </td>
           </tr>
         ))}
@@ -324,6 +332,18 @@ const styles = {
     margin: 0,
     fontSize: 28,
     color: "#0f172a",
+  },
+
+  createBtn: {
+    padding: "10px 18px",
+    borderRadius: 10,
+    border: "1px solid #c0c0c0ff",
+    background: "#ffffff",
+    color: "#475569",
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: "500",
+    transition: "all 0.2s"
   },
 
   messageSuccess: {

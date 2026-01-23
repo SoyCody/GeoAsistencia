@@ -51,6 +51,7 @@ export default function MapaSedeModal({ sede, onClose }) {
                                 <div style={styles.infoValue}>
                                     {sede.cantidad_geocercas || 0} {sede.cantidad_geocercas === 1 ? 'zona' : 'zonas'}
                                 </div>
+                                <div style={styles.infoSubtext}>Zonas de control configuradas</div>
                             </div>
                         </div>
 
@@ -66,11 +67,11 @@ export default function MapaSedeModal({ sede, onClose }) {
 
                         <div style={styles.infoItem}>
                             <div>
-                                <div style={styles.infoLabel}>Coordenadas técnicas</div>
-                                <div style={{ ...styles.infoSubtext, fontFamily: 'monospace' }}>
+                                <div style={styles.infoLabel}>Coordenadas</div>
+                                <div style={{ ...styles.infoCoord }}>
                                     Lat: {sede.latitud?.toFixed(6)}
                                 </div>
-                                <div style={{ ...styles.infoSubtext, fontFamily: 'monospace' }}>
+                                <div style={{ ...styles.infoCoord }}>
                                     Lng: {sede.longitud?.toFixed(6)}
                                 </div>
                             </div>
@@ -96,119 +97,166 @@ const styles = {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
+        backdropFilter: 'blur(4px)',
     },
 
     modal: {
         backgroundColor: '#fff',
-        borderRadius: '12px',
-        maxWidth: '800px',
-        width: '90%',
-        maxHeight: '85vh',
-        overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+        borderRadius: '16px',
+        maxWidth: '900px',
+        width: '92%',
+        maxHeight: '90vh',
+        overflow: 'auto',
+        boxShadow: '0 25px 70px rgba(0, 0, 0, 0.4)',
     },
 
     header: {
-        background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-        color: '#fff',
-        padding: '20px 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "24px 28px",
+        borderBottom: "1px solid #e5e7eb",
+        background: 'linear-gradient(135deg, #110a53 0%, #1e1b4b 100%)',
+        color: '#ffffff',
     },
 
     title: {
         margin: 0,
-        fontSize: '20px',
+        fontSize: '22px',
         fontWeight: '700',
+        color: '#ffffff',
     },
 
     subtitle: {
-        margin: '4px 0 0 0',
+        margin: '6px 0 0 0',
         fontSize: '14px',
-        opacity: 0.9,
+        color: '#cbd5e1',
     },
 
     closeBtn: {
-        background: 'rgba(255, 255, 255, 0.2)',
-        border: 'none',
-        color: '#fff',
-        fontSize: '24px',
-        width: '36px',
-        height: '36px',
-        borderRadius: '50%',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        background: "rgba(255, 255, 255, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+        fontSize: 20,
+        cursor: "pointer",
+        color: "#ffffff",
+        padding: "8px 12px",
+        borderRadius: "8px",
+        transition: "all 0.2s ease",
+        fontWeight: "600",
     },
 
     mapContainer: {
-        height: '500px',
+        height: '380px',
         width: '100%',
+        backgroundColor: '#f3f4f6',
     },
 
     info: {
-        padding: '24px',
+        padding: '36px 28px',
         backgroundColor: '#f9fafb',
         borderTop: '1px solid #e5e7eb',
+        minHeight: '220px',
     },
 
     infoGrid: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '20px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '28px',
     },
 
     infoItem: {
         display: 'flex',
         gap: '12px',
-    },
-
-    icon: {
-        fontSize: '20px',
-        marginTop: '2px',
+        padding: '16px',
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        border: '1px solid #e5e7eb',
+        transition: 'all 0.2s ease',
     },
 
     infoLabel: {
-        fontSize: '13px',
-        fontWeight: '500',
+        fontSize: '14px',
+        fontWeight: '600',
         color: '#374151',
-        marginBottom: '4px',
+        marginBottom: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
     },
 
     infoValue: {
-        fontSize: '14px',
+        fontSize: '18px',
         color: '#1f2937',
-        fontWeight: '500',
+        fontWeight: '700',
+        marginBottom: '4px',
     },
 
     infoSubtext: {
-        fontSize: '12px',
+        fontSize: '13px',
         color: '#6b7280',
-        marginTop: '2px',
+        marginTop: '4px',
+        lineHeight: '1.4',
+    },
+
+    infoCoord: {
+        fontSize: '13px',
+        color: '#4b5563',
+        fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+        backgroundColor: '#f3f4f6',
+        padding: '4px 8px',
+        borderRadius: '6px',
+        marginTop: '4px',
+        display: 'inline-block',
     },
 
     footer: {
-        padding: '16px 24px',
+        padding: '20px 28px',
         borderTop: '1px solid #e5e7eb',
         display: 'flex',
         justifyContent: 'flex-end',
+        backgroundColor: '#ffffff',
     },
 
     btnClose: {
-        padding: '10px 24px',
-        backgroundColor: '#0891b2',
+        padding: '12px 28px',
+        backgroundColor: '#2563eb',
         color: '#fff',
         border: 'none',
-        borderRadius: '8px',
-        fontSize: '14px',
-        fontWeight: '500',
+        borderRadius: '10px',
+        fontSize: '15px',
+        fontWeight: '600',
         cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        boxShadow: '0 2px 8px rgba(37, 99, 235, 0.2)',
     },
 };
+
+// Agregar estilos hover con JavaScript
+if (typeof document !== 'undefined') {
+    const style = document.createElement('style');
+    style.textContent = `
+        .modal button:hover {
+            transform: translateY(-1px);
+        }
+        
+        .modal .closeBtn:hover {
+            background: rgba(255, 255, 255, 0.2) !important;
+        }
+        
+        .modal .btnClose:hover {
+            background: #1d4ed8 !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+        }
+        
+        .modal .infoItem:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+    `;
+    document.head.appendChild(style);
+}

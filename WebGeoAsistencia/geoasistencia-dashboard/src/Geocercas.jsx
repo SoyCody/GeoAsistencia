@@ -3,6 +3,8 @@ import sedeService from './api/sedeService.js';
 import { useState, useEffect } from 'react';
 import MapaGeocercaModal from './components/MapaGeocercaModal';
 import UsuariosGeocercaModal from './components/UsuariosGeocercaModal';
+import ActionDropdown from './components/ActionDropdown';
+import MapLocationPicker from './components/MapLocationPicker';
 
 export default function Geocercas() {
   const [geocercas, setGeocercas] = useState([]);
@@ -112,12 +114,47 @@ export default function Geocercas() {
       setLoading(true);
       setMensaje({ texto: '', tipo: '' });
 
+      // Validar coordenadas y radio
+      const latitud = parseFloat(formData.latitud);
+      const longitud = parseFloat(formData.longitud);
+      const radio = parseInt(formData.radio_metros);
+
+      if (isNaN(latitud) || isNaN(longitud)) {
+        mostrarMensaje('Las coordenadas deben ser números válidos', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (latitud < -90 || latitud > 90) {
+        mostrarMensaje('La latitud debe estar entre -90 y 90', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (longitud < -180 || longitud > 180) {
+        mostrarMensaje('La longitud debe estar entre -180 y 180', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (isNaN(radio) || radio < 10) {
+        mostrarMensaje('El radio debe ser al menos 10 metros', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (radio > 10000) {
+        mostrarMensaje('El radio no puede ser mayor a 10,000 metros', 'error');
+        setLoading(false);
+        return;
+      }
+
       const dataToSend = {
         sede_id: formData.sede_id,
-        nombre_zona: formData.nombre_zona,
-        latitud: parseFloat(formData.latitud),
-        longitud: parseFloat(formData.longitud),
-        radio_metros: parseInt(formData.radio_metros)
+        nombre_zona: formData.nombre_zona.trim(),
+        latitud: latitud,
+        longitud: longitud,
+        radio_metros: radio
       };
 
       const response = await geocercaService.crear(dataToSend);
@@ -187,11 +224,46 @@ export default function Geocercas() {
       setLoading(true);
       setMensaje({ texto: '', tipo: '' });
 
+      // Validar coordenadas y radio
+      const latitud = parseFloat(formData.latitud);
+      const longitud = parseFloat(formData.longitud);
+      const radio = parseInt(formData.radio_metros);
+
+      if (isNaN(latitud) || isNaN(longitud)) {
+        mostrarMensaje('Las coordenadas deben ser números válidos', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (latitud < -90 || latitud > 90) {
+        mostrarMensaje('La latitud debe estar entre -90 y 90', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (longitud < -180 || longitud > 180) {
+        mostrarMensaje('La longitud debe estar entre -180 y 180', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (isNaN(radio) || radio < 10) {
+        mostrarMensaje('El radio debe ser al menos 10 metros', 'error');
+        setLoading(false);
+        return;
+      }
+
+      if (radio > 10000) {
+        mostrarMensaje('El radio no puede ser mayor a 10,000 metros', 'error');
+        setLoading(false);
+        return;
+      }
+
       const dataToSend = {
-        nombre_zona: formData.nombre_zona,
-        latitud: parseFloat(formData.latitud),
-        longitud: parseFloat(formData.longitud),
-        radio_metros: parseInt(formData.radio_metros)
+        nombre_zona: formData.nombre_zona.trim(),
+        latitud: latitud,
+        longitud: longitud,
+        radio_metros: radio
       };
 
       const response = await geocercaService.actualizar(geocercaEditando.id, dataToSend);
@@ -427,36 +499,32 @@ export default function Geocercas() {
 
                     {/* Acciones */}
                     <td style={styles.td}>
-                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <button
-                          style={styles.linkMap}
-                          onClick={() => abrirModalMapa(geocerca)}
-                          disabled={loading}
-                        >
-                          Ver mapa
-                        </button>
-                        <button
-                          style={styles.linkUsers}
-                          onClick={() => abrirModalUsuarios(geocerca)}
-                          disabled={loading}
-                        >
-                          Usuarios
-                        </button>
-                        <button
-                          style={styles.link}
-                          onClick={() => handleEditar(geocerca)}
-                          disabled={loading}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          style={styles.linkDanger}
-                          onClick={() => handleEliminar(geocerca.id, geocerca.nombre_zona)}
-                          disabled={loading}
-                        >
-                          Eliminar
-                        </button>
-                      </div>
+                      <ActionDropdown
+                        items={[
+                          {
+                            label: "Ver Mapa",
+                            onClick: () => abrirModalMapa(geocerca),
+                            color: "info",
+                          },
+                          {
+                            label: "Ver Usuarios",
+                            onClick: () => abrirModalUsuarios(geocerca),
+                            color: "purple",
+                          },
+                          {
+                            label: "Editar",
+                            onClick: () => handleEditar(geocerca),
+                            color: "primary",
+                          },
+                          { divider: true },
+                          {
+                            label: "Eliminar",
+                            onClick: () => handleEliminar(geocerca.id, geocerca.nombre_zona),
+                            color: "danger",
+                          },
+                        ]}
+                        position="right"
+                      />
                     </td>
                   </tr>
                 ))}
@@ -503,24 +571,7 @@ export default function Geocercas() {
                   onChange={handleInputChange}
                   required
                 />
-                <Input
-                  name="latitud"
-                  placeholder="Latitud *"
-                  value={formData.latitud}
-                  onChange={handleInputChange}
-                  required
-                  type="number"
-                  step="any"
-                />
-                <Input
-                  name="longitud"
-                  placeholder="Longitud *"
-                  value={formData.longitud}
-                  onChange={handleInputChange}
-                  required
-                  type="number"
-                  step="any"
-                />
+
                 <Input
                   name="radio_metros"
                   placeholder="Radio en metros *"
@@ -531,17 +582,23 @@ export default function Geocercas() {
                 />
               </div>
 
-              {/* MAPA */}
-              <div style={styles.map}>
-                <iframe
-                  title="Mapa Geocerca"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0, borderRadius: 10 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={getMapUrl()}
+              {/* MAPA LOCATION PICKER CON RADIO */}
+              <div style={{ gridColumn: '1 / -1' }}>
+                <h4 style={{ fontSize: '16px', marginBottom: '12px', color: '#374151' }}>
+                  Ubicación de la Geocerca
+                </h4>
+                <MapLocationPicker
+                  latitude={parseFloat(formData.latitud) || -4.38269}
+                  longitude={parseFloat(formData.longitud) || -79.94549}
+                  radius={parseInt(formData.radio_metros) || 100}
+                  onChange={(lat, lng) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      latitud: lat.toString(),
+                      longitud: lng.toString()
+                    }));
+                  }}
+                  showRadiusCircle={true}
                 />
               </div>
             </div>
@@ -760,20 +817,21 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: 24,
+    marginBottom: 20,
   },
 
   formGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: 18,
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
   },
 
   input: {
-    padding: 12,
+    padding: 10,
     borderRadius: 8,
     border: "1px solid #d1d5db",
     fontSize: 14,
-    width: "100%",
+    width: "70%",
     background: "#ffffff",
     color: "#000f"
   },
