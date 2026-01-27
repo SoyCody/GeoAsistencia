@@ -3,10 +3,10 @@ import registroService from "./api/registroService";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
-    dentro: 0,
-    fuera: 0,
+    dentro: 1,
+    fuera: 8,
     aTiempo: 0,
-    atrasados: 0
+    atrasados: 1
   });
   const [usuariosDentro, setUsuariosDentro] = useState([]);
   const [usuariosFuera, setUsuariosFuera] = useState([]);
